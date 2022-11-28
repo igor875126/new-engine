@@ -1,2 +1,2 @@
-# 2022-10-07 New Engine
-HTML 5 Game Engine
+# About
+`new-engine` is a HTML5 graphics engine.
