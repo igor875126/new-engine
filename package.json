@@ -1,22 +1,32 @@
 {
   "name": "new-engine",
-  "version": "0.1",
-  "description": "New Engine",
+  "version": "1.0",
+  "description": "new-engine is a HTML5 graphics engine",
   "main": "build/index.js",
   "types": "build/index.d.ts",
   "files": [
     "/build"
   ],
+  "keywords": [
+    "html5",
+    "canvas",
+    "html5 engine",
+    "video gaming engine"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/igor875126/new-engine"
+  },
   "scripts": {
     "build": "tsc",
     "watch": "tsc-watch",
     "documentation": "snowpack dev",
-    "NOTINUSEpub": "npm version patch --no-git-tag-version && npm run build && npm publish",
+    "pub": "npm version patch --no-git-tag-version && npm run build && npm publish",
     "cscheck": "./node_modules/.bin/tslint --project tsconfig.json",
     "eccheck": "./node_modules/.bin/editorconfig-checker -exclude \"(node_modules|build)\""
   },
   "author": "Igor Kov",
-  "license": "Proprietary software",
+  "license": "MIT",
   "devDependencies": {
     "editorconfig": "^0.15.3",
     "editorconfig-checker": "^3.3.0",
