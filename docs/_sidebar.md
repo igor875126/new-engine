@@ -1,4 +1,0 @@
-- Documentation
-    - [Animator - Animate sprites](documentation/Animator.md)
-    - [Collider](documentation/Collider.md)
-    - [Load scene from GameObject](documentation/LoadSceneFromGameObject.md)
