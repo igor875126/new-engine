@@ -10,6 +10,7 @@ import Time from "./Time";
 import SoundManager from "./SoundManager";
 import Locale from "./Locale";
 import Listeners from "./Listeners";
+import EventManager from "./EventManager";
 
 export default class Core {
 
@@ -20,6 +21,7 @@ export default class Core {
     public input: Input;
     public resourceLoader: ResourceLoader;
     public soundManager: SoundManager;
+    public eventManager: EventManager;
     public audioContext: AudioContext;
     public locale: Locale;
     public environment: 'development' | 'production';
@@ -52,7 +54,8 @@ export default class Core {
         // Instantiate all core components
         this.audioContext = new AudioContext();
         this.renderer = new Renderer(canvas, canvas2DContext);
-        this.gameObjectsManager = new GameObjectsManager();
+        this.eventManager = new EventManager();
+        this.gameObjectsManager = new GameObjectsManager(this.eventManager);
         this.input = new Input();
         this.resourceLoader = new ResourceLoader(this.audioContext);
         this.sceneManager = new SceneManager(this.resourceLoader, this.gameObjectsManager);
@@ -66,6 +69,7 @@ export default class Core {
         IOC.registerSingleton('ResourceLoader', this.resourceLoader);
         IOC.registerSingleton('SceneManager', this.sceneManager);
         IOC.registerSingleton('SoundManager', this.soundManager);
+        IOC.registerSingleton('EventManager', this.eventManager);
         IOC.registerSingleton('Locale', this.locale);
         IOC.registerSingleton('Core', this);
 

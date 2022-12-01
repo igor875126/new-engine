@@ -1,9 +1,18 @@
 import GameObject from "../Objects/GameObject";
+import EventManager from "./EventManager";
 
 export default class GameObjectsManager {
 
+    private eventManager: EventManager;
     private gameObjects: GameObject[] = [];
     private listOfGameObjectsWhereStartShouldBeCalled: GameObject[] = [];
+
+    /**
+     * Constructor
+     */
+    constructor(eventManager: EventManager) {
+        this.eventManager = eventManager;
+    }
 
     /**
      * Instantiate gameObject (create)
@@ -30,6 +39,9 @@ export default class GameObjectsManager {
 
                 // Destroy from array
                 this.gameObjects.splice(i, 1);
+
+                // Remove all event listeners
+                this.eventManager.removeEventListenerByGameObject(gameObject);
 
                 // Return deleted object, in case this is needed
                 return copy;
