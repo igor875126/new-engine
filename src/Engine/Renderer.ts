@@ -11,7 +11,7 @@ import Time from "./Time";
 export default class Renderer {
 
     private canvas: HTMLCanvasElement;
-    private context: CanvasRenderingContext2D;
+    public context: CanvasRenderingContext2D;
     private renderQueue: GameObject[] = [];
     public debug: { colliderRenderingEnabled: boolean, fpsRenderingEnabled: boolean } = {
         colliderRenderingEnabled: false,
@@ -150,11 +150,15 @@ export default class Renderer {
             return;
         }
 
+        // Get text dimensions
+        const textDimensions = gameObject.getTextDimensions();
+
         // Draw in context
         this.context.save();
         this.context.fillStyle = gameObject.color.getRgba();
-        this.context.font = gameObject.font;
-        this.context.fillText(gameObject.text, gameObject.position.x, gameObject.position.y);
+        this.context.font = `${gameObject.fontSize}px ${gameObject.fontName}`;
+        this.context.textBaseline = 'top';
+        this.context.fillText(gameObject.text, gameObject.position.x - textDimensions.width / 2, gameObject.position.y - 1 - textDimensions.height / 2);
         this.context.restore();
     }
 
