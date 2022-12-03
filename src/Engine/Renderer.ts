@@ -121,12 +121,14 @@ export default class Renderer {
         // TODO: put it into renderer initialization
         // this.context.imageSmoothingEnabled = false;
 
-        // WORKS BUT JUMPS
         this.context.save();
         this.context.translate(gameObject.position.x, gameObject.position.y);
-
         this.context.rotate(gameObject.angle * Math.PI / 180);
         this.context.globalAlpha = gameObject.color.a;
+        if (gameObject.shadow) {
+            this.context.shadowBlur = gameObject.shadow.blurInPixels;
+            this.context.shadowColor = gameObject.shadow.shadowColor.getRgba();
+        }
         this.context.drawImage(
             gameObject.sprite.imageObject as unknown as CanvasImageSource,
             gameObject.sprite.positionInAtlasX,
