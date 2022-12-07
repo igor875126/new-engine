@@ -4,14 +4,16 @@ import LineObject from "../Objects/LineObject";
 import RectObject from "../Objects/RectObject";
 import SpriteObject from "../Objects/SpriteObject";
 import TextObject from "../Objects/TextObject";
+import Camera from "./Camera";
 import CircleCollider from "./CircleCollider";
 import RectCollider from "./RectCollider";
 import Time from "./Time";
 
 export default class Renderer {
 
-    private canvas: HTMLCanvasElement;
+    public canvas: HTMLCanvasElement;
     public context: CanvasRenderingContext2D;
+    public camera: Camera;
     private renderQueue: GameObject[] = [];
     public debug: { colliderRenderingEnabled: boolean, fpsRenderingEnabled: boolean } = {
         colliderRenderingEnabled: false,
@@ -21,9 +23,10 @@ export default class Renderer {
     /**
      * Constructor
      */
-    constructor(canvas: HTMLCanvasElement, context: CanvasRenderingContext2D) {
+    constructor(canvas: HTMLCanvasElement, context: CanvasRenderingContext2D, camera: Camera) {
         this.canvas = canvas;
         this.context = context;
+        this.camera = camera;
         this.resizeCanvas();
     }
 
@@ -80,7 +83,7 @@ export default class Renderer {
         this.context.save();
         this.context.beginPath();
         this.context.fillStyle = gameObject.color.getRgba();
-        this.context.fillRect(gameObject.position.x, gameObject.position.y, gameObject.width, gameObject.height);
+        this.context.fillRect(gameObject.position.x - this.camera.getPositionOffsetForRenderer(gameObject).x, gameObject.position.y - this.camera.getPositionOffsetForRenderer(gameObject).y, gameObject.width, gameObject.height);
         this.context.stroke();
         this.context.restore();
     }
@@ -97,7 +100,7 @@ export default class Renderer {
         // Draw in context
         this.context.save();
         this.context.beginPath();
-        this.context.arc(gameObject.position.x, gameObject.position.y, gameObject.radius, 0, 2 * Math.PI, false);
+        this.context.arc(gameObject.position.x - this.camera.getPositionOffsetForRenderer(gameObject).x, gameObject.position.y - this.camera.getPositionOffsetForRenderer(gameObject).y, gameObject.radius, 0, 2 * Math.PI, false);
         this.context.fillStyle = gameObject.color.getRgba();
         this.context.fill();
         this.context.restore();
@@ -122,7 +125,7 @@ export default class Renderer {
         // this.context.imageSmoothingEnabled = false;
 
         this.context.save();
-        this.context.translate(gameObject.position.x, gameObject.position.y);
+        this.context.translate(gameObject.position.x - this.camera.getPositionOffsetForRenderer(gameObject).x, gameObject.position.y - this.camera.getPositionOffsetForRenderer(gameObject).y);
         this.context.rotate(gameObject.angle * Math.PI / 180);
         this.context.globalAlpha = gameObject.color.a;
         if (gameObject.shadow) {
@@ -160,7 +163,7 @@ export default class Renderer {
         this.context.fillStyle = gameObject.color.getRgba();
         this.context.font = `${gameObject.fontSize}px ${gameObject.fontName}`;
         this.context.textBaseline = 'top';
-        this.context.fillText(gameObject.text, gameObject.position.x - textDimensions.width / 2, gameObject.position.y - 1 - textDimensions.height / 2);
+        this.context.fillText(gameObject.text, gameObject.position.x - textDimensions.width / 2 - this.camera.getPositionOffsetForRenderer(gameObject).x, gameObject.position.y - 1 - textDimensions.height / 2 - this.camera.getPositionOffsetForRenderer(gameObject).y);
         this.context.restore();
     }
 
@@ -179,8 +182,8 @@ export default class Renderer {
         this.context.strokeStyle = gameObject.color.hex;
         this.context.lineWidth = gameObject.lineWidth;
         this.context.lineCap = 'round';
-        this.context.moveTo(gameObject.position.x, gameObject.position.y);
-        this.context.lineTo(gameObject.endPoint.x, gameObject.endPoint.y);
+        this.context.moveTo(gameObject.position.x - this.camera.getPositionOffsetForRenderer(gameObject).x, gameObject.position.y - this.camera.getPositionOffsetForRenderer(gameObject).y);
+        this.context.lineTo(gameObject.endPoint.x - this.camera.getPositionOffsetForRenderer(gameObject).x, gameObject.endPoint.y - this.camera.getPositionOffsetForRenderer(gameObject).y);
         this.context.stroke();
         this.context.restore();
     }
@@ -204,8 +207,8 @@ export default class Renderer {
             this.context.beginPath();
             this.context.fillStyle = fillStyle;
             this.context.fillRect(
-                gameObject.position.x + gameObject.collider.offset.x,
-                gameObject.position.y + gameObject.collider.offset.y,
+                gameObject.position.x + gameObject.collider.offset.x - this.camera.getPositionOffsetForRenderer(gameObject).x,
+                gameObject.position.y + gameObject.collider.offset.y - this.camera.getPositionOffsetForRenderer(gameObject).y,
                 gameObject.collider.size.x,
                 gameObject.collider.size.y
             );
@@ -220,8 +223,8 @@ export default class Renderer {
             this.context.save();
             this.context.beginPath();
             this.context.arc(
-                gameObject.position.x + gameObject.collider.offset.x,
-                gameObject.position.y + gameObject.collider.offset.y,
+                gameObject.position.x + gameObject.collider.offset.x - this.camera.getPositionOffsetForRenderer(gameObject).x,
+                gameObject.position.y + gameObject.collider.offset.y - this.camera.getPositionOffsetForRenderer(gameObject).y,
                 gameObject.collider.radius,
                 0,
                 2 * Math.PI,

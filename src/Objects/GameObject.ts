@@ -8,9 +8,10 @@ import Random from "../Helpers/Random";
 export default abstract class GameObject {
 
     public name: string;
-    public renderingLayer: number = 1;
+    public abstract renderingLayer: number;
     public abstract position: Vector2;
     public abstract collider: RectCollider | CircleCollider | null;
+    public abstract unaffectedByCamera: boolean;
     public core: Core;
 
     /**

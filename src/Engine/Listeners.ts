@@ -8,6 +8,7 @@ import RectCollider from "./RectCollider";
 import Renderer from "./Renderer";
 import Vector2 from "./Vector2";
 import GameObject from "../Objects/GameObject";
+import Camera from "./Camera";
 
 export default class Listeners {
 
@@ -16,17 +17,19 @@ export default class Listeners {
     private renderer: Renderer;
     private gameObjectsManager: GameObjectsManager;
     private environment: 'development' | 'production';
+    private camera: Camera;
     private mouseOverGameObjects: GameObject[] = [];
 
     /**
      * Constructor
      */
-    constructor(input: Input, canvas: HTMLCanvasElement, renderer: Renderer, gameObjectsManager: GameObjectsManager, environment: 'development' | 'production') {
+    constructor(input: Input, canvas: HTMLCanvasElement, renderer: Renderer, gameObjectsManager: GameObjectsManager, environment: 'development' | 'production', camera: Camera) {
         this.input = input;
         this.canvas = canvas;
         this.renderer = renderer;
         this.gameObjectsManager = gameObjectsManager;
         this.environment = environment;
+        this.camera = camera;
     }
 
     /**
@@ -52,7 +55,7 @@ export default class Listeners {
             // In case gameObjects collider is a circle collider
             if (gameObject.collider instanceof CircleCollider) {
                 // Check if mouse cursor is no more above the collider
-                if (!CollisionChecker.pointInsideCircle(mousePosition.x, mousePosition.y, gameObject.position.x + gameObject.collider.offset.x, gameObject.position.y + gameObject.collider.offset.y, gameObject.collider.radius)) {
+                if (!CollisionChecker.pointInsideCircle(mousePosition.x, mousePosition.y, gameObject.position.x + gameObject.collider.offset.x - this.camera.getPositionOffsetForRenderer(gameObject).x, gameObject.position.y + gameObject.collider.offset.y - this.camera.getPositionOffsetForRenderer(gameObject).y, gameObject.collider.radius)) {
                     gameObject.onMouseOut();
                     this.removeGameObjectFromAlreadyHoveredList(gameObject);
                 }
@@ -61,7 +64,7 @@ export default class Listeners {
             // In case gameObjects collider is a rect collider
             if (gameObject.collider instanceof RectCollider) {
                 // Check if mouse cursor is no more above the collider
-                if (!CollisionChecker.pointInsideRectangle(mousePosition.x, mousePosition.y, gameObject.position.x + gameObject.collider.offset.x, gameObject.position.y + gameObject.collider.offset.y, gameObject.collider.size.x, gameObject.collider.size.y)) {
+                if (!CollisionChecker.pointInsideRectangle(mousePosition.x, mousePosition.y, gameObject.position.x + gameObject.collider.offset.x - this.camera.getPositionOffsetForRenderer(gameObject).x, gameObject.position.y + gameObject.collider.offset.y - this.camera.getPositionOffsetForRenderer(gameObject).y, gameObject.collider.size.x, gameObject.collider.size.y)) {
                     gameObject.onMouseOut();
                     this.removeGameObjectFromAlreadyHoveredList(gameObject);
                 }
@@ -130,7 +133,7 @@ export default class Listeners {
             // Get mouse position
             const mousePosition = this.input.getMousePosition();
 
-            // Call onMouseClick method of all gameObjects
+            // Call onMouseOver method of all gameObjects
             for (const gameObject of this.gameObjectsManager.getAll()) {
                 // In case gameObject does not have any collider attached to it
                 if (!gameObject.collider) {
@@ -145,7 +148,7 @@ export default class Listeners {
                 // In case gameObjects collider is a circle collider
                 if (gameObject.collider instanceof CircleCollider) {
                     // Check if mouse cursor is above the collider
-                    if (CollisionChecker.pointInsideCircle(mousePosition.x, mousePosition.y, gameObject.position.x + gameObject.collider.offset.x, gameObject.position.y + gameObject.collider.offset.y, gameObject.collider.radius)) {
+                    if (CollisionChecker.pointInsideCircle(mousePosition.x, mousePosition.y, gameObject.position.x + gameObject.collider.offset.x - this.camera.getPositionOffsetForRenderer(gameObject).x, gameObject.position.y + gameObject.collider.offset.y - this.camera.getPositionOffsetForRenderer(gameObject).y, gameObject.collider.radius)) {
                         gameObject.onMouseOver();
                         this.mouseOverGameObjects.push(gameObject);
 
@@ -157,7 +160,7 @@ export default class Listeners {
                 // In case gameObjects collider is a rect collider
                 if (gameObject.collider instanceof RectCollider) {
                     // Check if mouse cursor is above the collider
-                    if (CollisionChecker.pointInsideRectangle(mousePosition.x, mousePosition.y, gameObject.position.x + gameObject.collider.offset.x, gameObject.position.y + gameObject.collider.offset.y, gameObject.collider.size.x, gameObject.collider.size.y)) {
+                    if (CollisionChecker.pointInsideRectangle(mousePosition.x, mousePosition.y, gameObject.position.x + gameObject.collider.offset.x - this.camera.getPositionOffsetForRenderer(gameObject).x, gameObject.position.y + gameObject.collider.offset.y - this.camera.getPositionOffsetForRenderer(gameObject).y, gameObject.collider.size.x, gameObject.collider.size.y)) {
                         gameObject.onMouseOver();
                         this.mouseOverGameObjects.push(gameObject);
 
@@ -206,7 +209,7 @@ export default class Listeners {
             // In case gameObjects collider is a circle collider
             if (gameObject.collider instanceof CircleCollider) {
                 // Check if mouse cursor is above the collider
-                if (CollisionChecker.pointInsideCircle(x, y, gameObject.position.x + gameObject.collider.offset.x, gameObject.position.y + gameObject.collider.offset.y, gameObject.collider.radius)) {
+                if (CollisionChecker.pointInsideCircle(x, y, gameObject.position.x + gameObject.collider.offset.x - this.camera.getPositionOffsetForRenderer(gameObject).x, gameObject.position.y + gameObject.collider.offset.y - this.camera.getPositionOffsetForRenderer(gameObject).y, gameObject.collider.radius)) {
                     gameObject.onMouseClick();
 
                     // Break the loop here, because we don't want to call onMouseClick of all layered objects, only the most top one
@@ -217,7 +220,7 @@ export default class Listeners {
             // In case gameObjects collider is a rect collider
             if (gameObject.collider instanceof RectCollider) {
                 // Check if mouse cursor is above the collider
-                if (CollisionChecker.pointInsideRectangle(x, y, gameObject.position.x + gameObject.collider.offset.x, gameObject.position.y + gameObject.collider.offset.y, gameObject.collider.size.x, gameObject.collider.size.y)) {
+                if (CollisionChecker.pointInsideRectangle(x, y, gameObject.position.x + gameObject.collider.offset.x - this.camera.getPositionOffsetForRenderer(gameObject).x, gameObject.position.y + gameObject.collider.offset.y - this.camera.getPositionOffsetForRenderer(gameObject).y, gameObject.collider.size.x, gameObject.collider.size.y)) {
                     gameObject.onMouseClick();
 
                     // Break the loop here, because we don't want to call onMouseClick of all layered objects, only the most top one

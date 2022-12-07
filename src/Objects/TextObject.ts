@@ -3,7 +3,7 @@ import GameObject from "./GameObject";
 
 export default abstract class TextObject extends GameObject {
 
-    public text: string;
+    public abstract text: string;
     public abstract fontName: string;
     public abstract fontSize: number;
     public abstract color: Color;
