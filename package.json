@@ -1,6 +1,6 @@
 {
   "name": "new-engine",
-  "version": "2.0.3",
+  "version": "2.1.0",
   "description": "new-engine is a HTML5 graphics engine",
   "main": "build/index.js",
   "types": "build/index.d.ts",

@@ -12,6 +12,7 @@ import Locale from "./Locale";
 import Listeners from "./Listeners";
 import EventManager from "./EventManager";
 import Camera from "./Camera";
+import CoreOptionsType from "../Types/CoreOptionsType";
 
 export default class Core {
 
@@ -26,7 +27,7 @@ export default class Core {
     public audioContext: AudioContext;
     public locale: Locale;
     public camera: Camera;
-    public environment: 'development' | 'production';
+    public options: CoreOptionsType;
 
     private listeners: Listeners;
     private currentTimestamp: number = 0;
@@ -35,12 +36,12 @@ export default class Core {
     /**
      * Constructor
      */
-    constructor(canvas: HTMLCanvasElement, language: string = 'ru', environment: 'development' | 'production' = 'production') {
-        // Store link to canvas in class properties
+    constructor(canvas: HTMLCanvasElement, options?: CoreOptionsType) {
+        // Set link to canvas in class properties
         this.canvas = canvas;
 
-        // Set environment
-        this.environment = environment;
+        // Set core options
+        this.setCoreOptions(options);
 
         // Disable right mouse button context menu
         canvas.oncontextmenu = (e) => { e.preventDefault(); e.stopPropagation(); };
@@ -56,14 +57,18 @@ export default class Core {
         // Instantiate all core components
         this.audioContext = new AudioContext();
         this.camera = new Camera(this);
-        this.renderer = new Renderer(canvas, canvas2DContext, this.camera);
+        this.renderer = new Renderer(canvas, canvas2DContext, this.camera, this.options.rendererOptions);
         this.eventManager = new EventManager();
         this.gameObjectsManager = new GameObjectsManager(this.eventManager);
         this.input = new Input();
         this.resourceLoader = new ResourceLoader(this.audioContext);
         this.sceneManager = new SceneManager(this.resourceLoader, this.gameObjectsManager);
         this.soundManager = new SoundManager(this.resourceLoader, this.audioContext);
-        this.locale = new Locale(this.resourceLoader, language);
+        this.locale = new Locale(this.resourceLoader, this.options.language);
+
+        // Register input listeners
+        this.listeners = new Listeners(this.input, this.canvas, this.renderer, this.gameObjectsManager, this.options.environment, this.camera);
+        this.listeners.register();
 
         // Put core components to IOC
         IOC.registerSingleton('Renderer', this.renderer);
@@ -77,13 +82,29 @@ export default class Core {
         IOC.registerSingleton('Core', this);
         IOC.registerSingleton('Camera', this.camera);
 
-        // Register input listeners
-        this.listeners = new Listeners(this.input, this.canvas, this.renderer, this.gameObjectsManager, this.environment, this.camera);
-        this.listeners.register();
-
         // Set time
         Time.deltaTime = this.currentTimestamp;
         Time.timestamp = this.currentTimestamp;
+    }
+
+    /**
+     * Set core options
+     */
+    private setCoreOptions(options?: CoreOptionsType): void {
+        // In case options are not set, fallback to default
+        if (!options) {
+            this.options = {
+                language: 'en',
+                environment: 'production',
+                rendererOptions: {
+                    imageSmoothingEnabled: true,
+                },
+            };
+            return;
+        }
+
+        // Options are given, set them
+        this.options = options;
     }
 
     /**

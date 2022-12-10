@@ -1,4 +1,4 @@
-import GameObjectsManager from "./GameObjectsManager";
+import Core from "./Core";
 import IOC from "./IOC";
 
 export default abstract class Scene {
@@ -7,7 +7,7 @@ export default abstract class Scene {
     public fonts: string[] = [];
     public sounds: string[] = [];
     public locales: string[] = [];
-    public gameObjectsManager: GameObjectsManager;
+    public core: Core;
 
     /**
      * Constructor
@@ -17,7 +17,7 @@ export default abstract class Scene {
         this.fonts = fonts;
         this.sounds = sounds;
         this.locales = locales;
-        this.gameObjectsManager = IOC.makeSingleton('GameObjectsManager');
+        this.core = IOC.makeSingleton('Core');
     }
 
     /**

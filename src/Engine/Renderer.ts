@@ -4,6 +4,7 @@ import LineObject from "../Objects/LineObject";
 import RectObject from "../Objects/RectObject";
 import SpriteObject from "../Objects/SpriteObject";
 import TextObject from "../Objects/TextObject";
+import CoreOptionsType from "../Types/CoreOptionsType";
 import Camera from "./Camera";
 import CircleCollider from "./CircleCollider";
 import RectCollider from "./RectCollider";
@@ -14,8 +15,9 @@ export default class Renderer {
     public canvas: HTMLCanvasElement;
     public context: CanvasRenderingContext2D;
     public camera: Camera;
+    public options: CoreOptionsType['rendererOptions'];
     private renderQueue: GameObject[] = [];
-    public debug: { colliderRenderingEnabled: boolean, fpsRenderingEnabled: boolean } = {
+    private debug: { colliderRenderingEnabled: boolean, fpsRenderingEnabled: boolean } = {
         colliderRenderingEnabled: false,
         fpsRenderingEnabled: false,
     };
@@ -23,10 +25,11 @@ export default class Renderer {
     /**
      * Constructor
      */
-    constructor(canvas: HTMLCanvasElement, context: CanvasRenderingContext2D, camera: Camera) {
+    constructor(canvas: HTMLCanvasElement, context: CanvasRenderingContext2D, camera: Camera, options: CoreOptionsType['rendererOptions']) {
         this.canvas = canvas;
         this.context = context;
         this.camera = camera;
+        this.options = options;
         this.resizeCanvas();
     }
 
@@ -41,6 +44,11 @@ export default class Renderer {
      * Draws all object from render queue
      */
     public flush(): void {
+        // Wait until camera get's ready
+        if (!this.camera) {
+            return;
+        }
+
         // Clear the viewport
         this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
@@ -68,6 +76,29 @@ export default class Renderer {
 
         // Clear render queue
         this.renderQueue = [];
+    }
+
+    /**
+     * Resize canvas
+     */
+    public resizeCanvas(): void {
+        // Change canvas width and height
+        this.canvas.width = window.innerWidth;
+        this.canvas.height = window.innerHeight;
+    }
+
+    /**
+     * Toggle debug fps rendering
+     */
+    public toggleDebugFpsRendering(): void {
+        this.debug.fpsRenderingEnabled = !this.debug.fpsRenderingEnabled;
+    }
+
+    /**
+     * Toggle debug fps rendering
+     */
+    public toggleDebugColliderRendering(): void {
+        this.debug.colliderRenderingEnabled = !this.debug.colliderRenderingEnabled;
     }
 
     /**
@@ -121,9 +152,10 @@ export default class Renderer {
             return;
         }
 
-        // TODO: put it into renderer initialization
-        // this.context.imageSmoothingEnabled = false;
+        // Set image smoothing (taken from the options)
+        this.context.imageSmoothingEnabled = this.options.imageSmoothingEnabled;
 
+        // Draw
         this.context.save();
         this.context.translate(gameObject.position.x - this.camera.getPositionOffsetForRenderer(gameObject).x, gameObject.position.y - this.camera.getPositionOffsetForRenderer(gameObject).y);
         this.context.rotate(gameObject.angle * Math.PI / 180);
@@ -240,23 +272,32 @@ export default class Renderer {
     /**
      * Render fps
      */
+    private previousFps: number = 60;
+    private fpsList: number[] = [];
     private renderFps(): void {
         // Draw in context
         this.context.save();
         this.context.fillStyle = 'rgba(0, 255, 0, 1)';
         this.context.font = '15px Nova Mono';
-        let fps = (1 / Time.deltaTime).toFixed(0);
-        fps = (isFinite(Number(fps)) ? fps : '60');
-        this.context.fillText(`FPS: ${fps}`, 10, 20);
+        this.context.fillText(`FPS: ${this.previousFps}`, 10, 20);
         this.context.restore();
-    }
 
-    /**
-     * Resize canvas
-     */
-    public resizeCanvas(): void {
-        // Change canvas width and height
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
+        // Push fps to fps list
+        let fps = Number((1 / Time.deltaTime).toFixed(0));
+        fps = (isFinite(Number(fps)) ? fps : 60);
+        this.fpsList.push(fps);
+
+        // In case the fps list does not contains enough items
+        if (this.fpsList.length < 5) {
+            return;
+        }
+
+        // Set previous fps (calculate it)
+        let fpsSum = 0;
+        for (const element of this.fpsList) {
+            fpsSum += element;
+        }
+        this.previousFps = Number((fpsSum / 5).toFixed(0));
+        this.fpsList = [];
     }
 }

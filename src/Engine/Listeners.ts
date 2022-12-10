@@ -295,12 +295,12 @@ export default class Listeners {
 
             // Enable/Disable FPS rendering
             if (event.keyCode === KeyboardButtonsEnum.Digit1) {
-                this.renderer.debug.fpsRenderingEnabled = !this.renderer.debug.fpsRenderingEnabled;
+                this.renderer.toggleDebugFpsRendering();
             }
 
             // Enable/Disable Collider rendering
             if (event.keyCode === KeyboardButtonsEnum.Digit2) {
-                this.renderer.debug.colliderRenderingEnabled = !this.renderer.debug.colliderRenderingEnabled;
+                this.renderer.toggleDebugColliderRendering();
             }
         });
     }
