@@ -13,8 +13,6 @@ export default class EventManager {
      * Remove event listener by game object
      */
     public removeEventListenerByGameObject(gameObject: GameObject): void {
-        console.log(`===before===`);
-        console.log(this.eventListeners['hello-from-test'].length);
         for (const [eventName, value] of Object.entries(this.eventListeners)) {
             for (let i = 0; i < value.length; i++) {
                 if (this.eventListeners[eventName][i].gameObject.name === gameObject.name) {
@@ -23,8 +21,6 @@ export default class EventManager {
                 }
             }
         }
-        console.log(`===after===`);
-        console.log(this.eventListeners['hello-from-test'].length);
     }
 
     /**

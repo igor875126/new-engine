@@ -194,8 +194,12 @@ export default class Renderer {
         this.context.save();
         this.context.fillStyle = gameObject.color.getRgba();
         this.context.font = `${gameObject.fontSize}px ${gameObject.fontName}`;
-        this.context.textBaseline = 'top';
-        this.context.fillText(gameObject.text, gameObject.position.x - textDimensions.width / 2 - this.camera.getPositionOffsetForRenderer(gameObject).x, gameObject.position.y - 1 - textDimensions.height / 2 - this.camera.getPositionOffsetForRenderer(gameObject).y);
+        // this.context.textBaseline = 'alphabetic';
+        // this.context.fillText(gameObject.text, gameObject.position.x - textDimensions.width / 2 - this.camera.getPositionOffsetForRenderer(gameObject).x, gameObject.position.y - this.camera.getPositionOffsetForRenderer(gameObject).y);
+        // this.context.textBaseline = 'top';
+        // this.context.fillText(gameObject.text, gameObject.position.x - textDimensions.width / 2 - this.camera.getPositionOffsetForRenderer(gameObject).x, gameObject.position.y - textDimensions.height / 2 - this.camera.getPositionOffsetForRenderer(gameObject).y);
+
+        this.context.fillText(gameObject.text, gameObject.position.x - textDimensions.width / 2 - this.camera.getPositionOffsetForRenderer(gameObject).x, gameObject.position.y + textDimensions.height / 2 - this.camera.getPositionOffsetForRenderer(gameObject).y);
         this.context.restore();
     }
 
