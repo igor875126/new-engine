@@ -85,6 +85,16 @@ export default class Core {
         // Set time
         Time.deltaTime = this.currentTimestamp;
         Time.timestamp = this.currentTimestamp;
+
+        // Display fps counter at start when enabled
+        if (this.options.debug.toggleFpsRenderingAtStart) {
+            this.renderer.toggleDebugFpsRendering();
+        }
+
+        // Display colliders at start when enabled
+        if (this.options.debug.toggleDebugColliderRenderingAtStart) {
+            this.renderer.toggleDebugColliderRendering();
+        }
     }
 
     /**
@@ -96,6 +106,10 @@ export default class Core {
             this.options = {
                 language: 'en',
                 environment: 'production',
+                debug: {
+                    toggleFpsRenderingAtStart: false,
+                    toggleDebugColliderRenderingAtStart: false,
+                },
                 rendererOptions: {
                     imageSmoothingEnabled: true,
                 },
@@ -146,6 +160,13 @@ export default class Core {
 
         // Call update function of all gameObjects
         for (const gameObject of this.gameObjectsManager.getAll()) {
+            // Do not call gameObject update method when window is hidden
+            // TODO, does not work as expected
+            if (document.hidden) {
+                continue;
+            }
+
+            // Call update
             gameObject.update();
         }
 

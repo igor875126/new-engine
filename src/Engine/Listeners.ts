@@ -37,6 +37,7 @@ export default class Listeners {
      */
     public register(): void {
         this.registerMouseListeners();
+        this.registerTouchListeners();
         this.registerKeyboardListeners();
         this.registerResizeListeners();
         this.registerWindowFocusListeners();
@@ -78,23 +79,36 @@ export default class Listeners {
     private registerMouseListeners(): void {
         // Mouse down
         this.canvas.addEventListener('mousedown', (event) => {
-            this.input.mouseButtonsStates[event.button] = true;
+            // Do not apply on mobile
+            if (Helper.mobileUserAgent()) {
+                return;
+            }
+            this.input.mouse.mouseButtonsStates[event.button] = true;
         });
 
         // Mouse up
         this.canvas.addEventListener('mouseup', (event) => {
-            this.input.mouseButtonsStates[event.button] = false;
+            // Do not apply on mobile
+            if (Helper.mobileUserAgent()) {
+                return;
+            }
+            this.input.mouse.mouseButtonsStates[event.button] = false;
         });
 
         // Mouse move
         this.canvas.addEventListener('mousemove', (event) => {
+            // Do not apply on mobile
+            if (Helper.mobileUserAgent()) {
+                return;
+            }
+
             // Get relative coordinates
             const rect = this.canvas.getBoundingClientRect();
             const x = event.clientX - rect.left;
             const y = event.clientY - rect.top;
 
             // Inject into Input class
-            this.input.mousePosition = new Vector2(x, y);
+            this.input.mouse.mousePosition = new Vector2(x, y);
         });
 
         // Mouse click event
@@ -109,18 +123,6 @@ export default class Listeners {
 
             // Call on mouse click method on game objects
             this.callOnMouseClickMethodOnGameObjects(mousePosition.x, mousePosition.y);
-        });
-
-        // Mobile mouse click event
-        this.canvas.addEventListener('touchend', (event) => {
-            // Get relative coordinates
-            const rect = this.canvas.getBoundingClientRect();
-            const touch = event.touches[0] || event.changedTouches[0];
-            const x = touch.clientX - rect.left;
-            const y = touch.clientY - rect.top;
-
-            // Call on mouse click method on game objects
-            this.callOnMouseClickMethodOnGameObjects(x, y);
         });
 
         // Mouse over event
@@ -169,6 +171,103 @@ export default class Listeners {
                     }
                 }
             }
+        });
+    }
+
+    /**
+     * Register touch listeners
+     */
+    private registerTouchListeners(): void {
+        // Touch start
+        this.canvas.addEventListener('touchstart', (event) => {
+            // Set state of screen is touched variable
+            this.input.touch.screenIsTouched = true;
+
+            // Update amount of fingers detected
+            this.input.touch.fingersDetected = event.touches.length;
+
+            // Get relative coordinates
+            const rect = this.canvas.getBoundingClientRect();
+
+            // Now inject touch positions for every finger which is touching the display
+            for (let i = 0; i < event.touches.length; i++) {
+                const touch = event.touches[i];
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+                this.input.touch.touchPositions[i] = new Vector2(x, y);
+            }
+
+            // Prevent default event
+            event.preventDefault();
+        });
+
+        // Touch start
+        this.canvas.addEventListener('touchmove', (event) => {
+            // Get relative coordinates
+            const rect = this.canvas.getBoundingClientRect();
+
+            // Now inject touch positions for every finger which is touching the display
+            for (let i = 0; i < event.touches.length; i++) {
+                const touch = event.touches[i];
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+                this.input.touch.touchPositions[i] = new Vector2(x, y);
+            }
+
+            // Prevent default event
+            event.preventDefault();
+        });
+
+        // Touch end
+        this.canvas.addEventListener('touchend', (event) => {
+            // Update amount of fingers detected
+            this.input.touch.fingersDetected = event.touches.length;
+
+            // Call on mouse click method on game objects
+            this.callOnMouseClickMethodOnGameObjects(this.input.touch.touchPositions[this.input.touch.fingersDetected + 1].x, this.input.touch.touchPositions[this.input.touch.fingersDetected + 1].y);
+
+            // Get relative coordinates
+            const rect = this.canvas.getBoundingClientRect();
+
+            // Now inject touch positions for every finger which is touching the display
+            for (let i = 0; i < this.input.touch.touchPositions.length; i++) {
+                const touch = event.touches[i];
+
+                if (!touch) {
+                    this.input.touch.touchPositions[i] = new Vector2(0, 0);
+                    continue;
+                }
+
+                // Inject position
+                const x = touch.clientX - rect.left;
+                const y = touch.clientY - rect.top;
+                this.input.touch.touchPositions[i] = new Vector2(x, y);
+            }
+
+            // Set state of touch event only when there are no touches anymore
+            if (event.touches.length === 0) {
+                this.input.touch.screenIsTouched = false;
+            }
+
+            // Prevent default event
+            event.preventDefault();
+        });
+
+        // Touch end
+        this.canvas.addEventListener('touchcancel', (event) => {
+            // Update amount of fingers detected
+            this.input.touch.fingersDetected = event.touches.length;
+
+            // Now inject touch positions for every finger which is touching the display
+            for (let i = 0; i < this.input.touch.touchPositions.length; i++) {
+                this.input.touch.touchPositions[i] = new Vector2(0, 0);
+            }
+
+            // Set state of touch event only when there are no touches anymore
+            this.input.touch.screenIsTouched = false;
+
+            // Prevent default event
+            event.preventDefault();
         });
     }
 
@@ -236,12 +335,12 @@ export default class Listeners {
     private registerKeyboardListeners(): void {
         // Keyboard down
         window.addEventListener('keydown', (event) => {
-            this.input.keyboardButtonsStates[event.keyCode] = true;
+            this.input.keyboard.keyboardButtonsStates[event.keyCode] = true;
         });
 
         // Keyboard up
         window.addEventListener('keyup', (event) => {
-            this.input.keyboardButtonsStates[event.keyCode] = false;
+            this.input.keyboard.keyboardButtonsStates[event.keyCode] = false;
         });
     }
 
