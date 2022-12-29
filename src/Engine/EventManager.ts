@@ -2,12 +2,7 @@ import GameObject from "../Objects/GameObject";
 
 export default class EventManager {
 
-    public eventListeners: {
-        [key: string]: {
-            gameObject: GameObject,
-            callback: (data: any) => void
-        }[]
-    } = {};
+    public eventListeners: { [key: string]: { gameObject: GameObject, callback: (data: any) => void }[] } = {};
 
     /**
      * Remove event listener by game object

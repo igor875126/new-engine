@@ -8,9 +8,8 @@ import Vector2 from "./Vector2";
 export default class Camera {
 
     public position: Vector2 = new Vector2(0, 0);
-    private core: Core;
-    private shakeSinCounter: number = 0;
     private shakeOriginalPosition: Vector2 = new Vector2(0, 0);
+    private core: Core;
 
     /**
      * Constructor
