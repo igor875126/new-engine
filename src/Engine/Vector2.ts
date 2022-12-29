@@ -167,8 +167,16 @@ export default class Vector2 {
     /**
      * Returns angle between two vectors
      */
-    public static angleTo(v1: Vector2, v2: Vector2): number {
-        return Math.acos(Vector2.dot(v1, v2) / (v1.magnitude * v2.magnitude));
+    public static angleBetween(v1: Vector2, v2: Vector2): number {
+        const dx = v1.x - v2.x;
+        const dy = v1.y - v2.y;
+        let angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+        // Range from 0 to 360
+        if (angle < 0)
+            angle = 360 + angle;
+
+        return angle;
     }
 
     /**
