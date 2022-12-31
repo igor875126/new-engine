@@ -55,10 +55,7 @@ export default class GameObjectsManager {
      * Destroy all gameObjects
      */
     public destroyAll(): void {
-        for (let i = 0; i < this.gameObjects.length; i++) {
-            // Destroy from array
-            this.gameObjects.splice(i, 1);
-        }
+        this.gameObjects = [];
     }
 
     /**

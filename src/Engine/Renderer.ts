@@ -9,10 +9,12 @@ import Camera from "./Camera";
 import CircleCollider from "./CircleCollider";
 import RectCollider from "./RectCollider";
 import Time from "./Time";
+import Vector2 from "./Vector2";
 
 export default class Renderer {
 
     public canvas: HTMLCanvasElement;
+    public canvasCenter: Vector2;
     public context: CanvasRenderingContext2D;
     public camera: Camera;
     public options: CoreOptionsType['rendererOptions'];
@@ -85,6 +87,17 @@ export default class Renderer {
         // Change canvas width and height
         this.canvas.width = window.innerWidth;
         this.canvas.height = window.innerHeight;
+
+        // After canvas resize, remember the center of the canvas
+        this.canvasCenter = new Vector2(this.canvas.width / 2, this.canvas.height / 2);
+
+        // TODO Canvas scaling, read more here: https://developer.mozilla.org/en-US/docs/Web/API/Canvas_API/Tutorial/Optimizing_canvas
+        // const scaleX = window.innerWidth / this.canvas.width;
+        // const scaleY = window.innerHeight / this.canvas.height;
+        // const scaleToFit = Math.min(scaleX, scaleY);
+        // const scaleToCover = Math.max(scaleX, scaleY);
+        // this.canvas.style.transformOrigin = "0 0"; // scale from top left
+        // this.canvas.style.transform = `scale(${scaleToFit})`;
     }
 
     /**

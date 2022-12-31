@@ -224,7 +224,7 @@ export default class Listeners {
             this.input.touch.fingersDetected = event.touches.length;
 
             // Call on mouse click method on game objects
-            this.callOnMouseClickMethodOnGameObjects(this.input.touch.touchPositions[this.input.touch.fingersDetected + 1].x, this.input.touch.touchPositions[this.input.touch.fingersDetected + 1].y);
+            this.callOnMouseClickMethodOnGameObjects(this.input.touch.touchPositions[this.input.touch.fingersDetected].x, this.input.touch.touchPositions[this.input.touch.fingersDetected].y);
 
             // Get relative coordinates
             const rect = this.canvas.getBoundingClientRect();
