@@ -2,6 +2,11 @@ import Random from "../Helpers/Random";
 import Sprite from "./Sprite";
 import Time from "./Time";
 
+/**
+ * The Animator class is designed to manage and control sprite animations within a game.
+ * It allows for the creation and playback of animations, including options for looping,
+ * one-time playback, and random single-frame playback.
+ */
 export default class Animator {
 
     private frames: { [key: string]: Sprite[] } = {};

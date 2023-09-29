@@ -1,6 +1,6 @@
 {
   "name": "new-engine",
-  "version": "3.0.4",
+  "version": "3.0.5",
   "description": "new-engine is a HTML5 graphics engine",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -20,7 +20,6 @@
   "scripts": {
     "build": "tsc",
     "watch": "tsc-watch",
-    "documentation": "snowpack dev",
     "pub": "npm version patch --no-git-tag-version && npm run build && npm publish",
     "cscheck": "./node_modules/.bin/tslint --project tsconfig.json",
     "eccheck": "./node_modules/.bin/editorconfig-checker -exclude \"(node_modules|build)\""
@@ -28,9 +27,9 @@
   "author": "Igor Kov",
   "license": "MIT",
   "devDependencies": {
+    "@types/node": "^20.7.1",
     "editorconfig": "^0.15.3",
     "editorconfig-checker": "^3.3.0",
-    "snowpack": "^3.8.8",
     "tsc-watch": "^4.2.9",
     "tslint": "^6.1.3",
     "typescript": "^4.1.3"

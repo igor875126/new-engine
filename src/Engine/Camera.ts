@@ -2,9 +2,14 @@ import Helper from "../Helpers/Helper";
 import Random from "../Helpers/Random";
 import GameObject from "../Objects/GameObject";
 import Core from "./Core";
-import Time from "./Time";
 import Vector2 from "./Vector2";
 
+/**
+ * The Camera class serves as a component within a game or application's rendering system
+ * and is responsible for managing the position of the in-game camera.
+ * It offers functionality for tracking and offsetting the camera's position for rendering,
+ * as well as creating a shaking effect to add dynamism to the visual presentation.
+ */
 export default class Camera {
 
     public position: Vector2 = new Vector2(0, 0);

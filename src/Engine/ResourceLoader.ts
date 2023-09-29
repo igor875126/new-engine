@@ -3,7 +3,15 @@ import FontType from "../Types/FontType";
 import ImageType from "../Types/ImageType";
 import LocaleType from "../Types/LocaleType";
 import SoundType from "../Types/SoundType";
+import Preloader from "./Preloader";
 
+/**
+ * The ResourceLoader class is designed to handle the loading and management of various types of resources,
+ * such as images, fonts, sounds, and localization files.
+ * This class encapsulates the logic for adding resources to a loading queue,
+ * loading them asynchronously,
+ * and providing methods to retrieve these resources once they are loaded.
+ */
 export default class ResourceLoader {
 
     private images: ImageType[] = [];
@@ -11,6 +19,8 @@ export default class ResourceLoader {
     private sounds: SoundType[] = [];
     private locales: LocaleType[] = [];
     private audioContext: AudioContext;
+    private totalResourcesToLoad: number = 0;
+    private alreadyLoadedResources: number = 0;
 
     /**
      * Constructor
@@ -137,6 +147,12 @@ export default class ResourceLoader {
      * Load all given presets
      */
     public async loadAllResources(): Promise<void> {
+        // Show preloader
+        Preloader.showPreloader();
+
+        // Calculate total resources to load
+        this.totalResourcesToLoad = this.images.length + this.fonts.length + this.sounds.length + this.locales.length;
+
         // Create promise list
         const promiseList: any[] = [];
 
@@ -182,6 +198,9 @@ export default class ResourceLoader {
 
         // Load all resources simultaneously
         await Promise.all(promiseList);
+
+        // Hide preloader
+        Preloader.hidePreloader();
     }
 
     /**
@@ -194,6 +213,10 @@ export default class ResourceLoader {
                 image.object = img;
                 image.loaded = true;
                 resolve();
+
+                // Progress
+                this.alreadyLoadedResources++;
+                Preloader.setPreloaderProgress(this.alreadyLoadedResources, this.totalResourcesToLoad);
             });
             img.addEventListener('error', (err) => reject(err));
             img.src = image.url;
@@ -210,6 +233,10 @@ export default class ResourceLoader {
         // @ts-ignore
         document.fonts.add(loadedFont);
         font.loaded = true;
+
+        // Progress
+        this.alreadyLoadedResources++;
+        Preloader.setPreloaderProgress(this.alreadyLoadedResources, this.totalResourcesToLoad);
     }
 
     /**
@@ -226,6 +253,10 @@ export default class ResourceLoader {
             currentPlaying: null
         };
         sound.loaded = true;
+
+        // Progress
+        this.alreadyLoadedResources++;
+        Preloader.setPreloaderProgress(this.alreadyLoadedResources, this.totalResourcesToLoad);
     }
 
     /**
@@ -244,6 +275,10 @@ export default class ResourceLoader {
 
             // Mark locale as loaded
             locale.loaded = true;
+
+            // Progress
+            this.alreadyLoadedResources++;
+            Preloader.setPreloaderProgress(this.alreadyLoadedResources, this.totalResourcesToLoad);
         } catch (error) {
             throw new ResourceLoaderException(`Error occurred while loading ${locale.url}: ${error.message}`);
         }
