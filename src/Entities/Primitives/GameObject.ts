@@ -4,6 +4,7 @@ import Core from "../../Engine/Core/Core";
 import RectCollider from "../../Engine/Colliders/RectCollider";
 import Vector2 from "../../Engine/Utilities/Vector2";
 import Random from "../../Helpers/Random";
+import CollisionType from "../../Types/CollisionType";
 
 export default abstract class GameObject {
 
@@ -39,14 +40,14 @@ export default abstract class GameObject {
     /**
      * On mouse click
      */
-    public onMouseClick(): void {
+    public onMouseClick(collisionPoint: Vector2): void {
         // Do something when mouse clicks on the object
     }
 
     /**
      * On mouse over
      */
-    public onMouseOver(): void {
+    public onMouseOver(collisionPoint: Vector2): void {
         // Do something when mouse is over
     }
 
@@ -55,6 +56,13 @@ export default abstract class GameObject {
      */
     public onMouseOut(): void {
         // Do something when mouse is out
+    }
+
+    /**
+     * On collision
+     */
+    public onCollision(collision: CollisionType): void {
+        // Do something when collision happened
     }
 
     /**

@@ -1,4 +1,6 @@
 import CanvasContextException from "../../Exceptions/CanvasContextException";
+import CollisionChecker from "../../Helpers/CollisionChecker";
+import Helper from "../../Helpers/Helper";
 import CoreOptionsType from "../../Types/CoreOptionsType";
 import EventManager from "../Managers/EventManager";
 import GameObjectsManager from "../Managers/GameObjectsManager";
@@ -34,6 +36,7 @@ export default class Core {
     private listeners: Listeners;
     private currentTimestamp: number = 0;
     private gameLoopStarted: boolean = false;
+    private fixedLoopStarted: boolean = false;
 
     /**
      * Constructor
@@ -59,7 +62,7 @@ export default class Core {
         // Instantiate all core components
         this.audioContext = new AudioContext();
         this.camera = new Camera();
-        this.scalingManager = new ScalingManager(options.resolution);
+        this.scalingManager = new ScalingManager(options.rendererOptions.resolution);
         this.renderer = new Renderer(canvas, canvas2DContext, this.camera, this.scalingManager, this.options.rendererOptions);
         this.eventManager = new EventManager();
         this.gameObjectsManager = new GameObjectsManager(this.eventManager);
@@ -71,7 +74,6 @@ export default class Core {
 
         // Register input listeners
         this.listeners = new Listeners(this.input, this.canvas, this.renderer, this.gameObjectsManager, this.options.environment, this.camera, this.scalingManager);
-        this.listeners.register();
 
         // Put core components to IOC
         IOC.registerSingleton('Renderer', this.renderer);
@@ -112,9 +114,16 @@ export default class Core {
      */
     public loadSceneAndRun(sceneName: string): void {
         this.sceneManager.load(sceneName).then(() => {
+            // Start game loop
             if (!this.gameLoopStarted) {
                 this.gameLoopStarted = true;
                 this.gameLoop(0);
+            }
+
+            // Start fixed loop
+            if (!this.fixedLoopStarted) {
+                this.fixedLoopStarted = true;
+                this.fixedLoop();
             }
         });
     }
@@ -158,12 +167,48 @@ export default class Core {
         // this.input.keyboardButtonsStates = {};
 
         // Call mouse out event on all needed game objects in the end of the frame
-        this.listeners.callMouseOutEventOnAllNeededGameObjects();
+        this.listeners.callMouseOutEventOnAllNotHoveredGameObjects();
 
         // Set current timestamp
         this.currentTimestamp = timestamp;
 
         // Request gameLoop again
         window.requestAnimationFrame(this.gameLoop.bind(this));
+    }
+
+    /**
+     * Used to check collisions between gameObjects
+     */
+    private async fixedLoop(): Promise<void> {
+        // Check if collision check is enabled
+        if (!this.options.collisions.enabled) {
+            // Nope
+            return;
+        }
+
+        // First of all get all gameObjects
+        const allGameObjects = this.gameObjectsManager.getAll();
+
+        // Now throw out gameObjects where collider is set to null
+        const gameObjectsWithCollider = allGameObjects.filter((gameObject) => gameObject.collider);
+
+        // Check collision
+        for (const gameObject1 of gameObjectsWithCollider) {
+            for (const gameObject2 of gameObjectsWithCollider) {
+                // Check collision
+                const collision = CollisionChecker.checkCollisionBetweenGameObjects(gameObject1, gameObject2, this.scalingManager, this.camera);
+
+                // In case collision happened
+                if (collision) {
+                    gameObject2.onCollision(collision);
+                }
+            }
+        }
+
+        // Wait until next call
+        await Helper.sleep(this.options.collisions.fixedLoopWaitInMs);
+
+        // Run method again
+        this.fixedLoop();
     }
 }

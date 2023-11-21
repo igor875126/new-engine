@@ -58,4 +58,49 @@ export class ScalingManager {
             position.y / this.scale.y
         );
     }
+
+    /**
+     * Box size virtual to screen
+     * TODO REFACTOR!
+     */
+    public boxSizeVirtualToScreen(size: Vector2): Vector2 {
+        const aspectRatio = size.x / size.y;
+
+        // Calculate the scaled dimensions based on width and height separately
+        const scaledWidthBasedOnWidth = size.x * this.scale.x;
+        const scaledHeightBasedOnWidth = scaledWidthBasedOnWidth / aspectRatio;
+
+        const scaledHeightBasedOnHeight = size.y * this.scale.y;
+        const scaledWidthBasedOnHeight = scaledHeightBasedOnHeight * aspectRatio;
+
+        // Choose the scaling that fits within both dimensions
+        let scaledWidth;
+        let scaledHeight;
+        if (scaledWidthBasedOnWidth <= scaledWidthBasedOnHeight && scaledHeightBasedOnWidth <= size.y * this.scale.y) {
+            // Scale based on width
+            scaledWidth = scaledWidthBasedOnWidth;
+            scaledHeight = scaledHeightBasedOnWidth;
+        } else {
+            // Scale based on height
+            scaledWidth = scaledWidthBasedOnHeight;
+            scaledHeight = scaledHeightBasedOnHeight;
+        }
+
+        // Return the new dimensions
+        return new Vector2(scaledWidth, scaledHeight);
+    }
+
+    /**
+     * Circle size virtual to screen
+     */
+    public circleRadiusVirtualToScreen(radius: number): number {
+        // Calculate the scaled radius based on the scale of X or Y axis.
+        // It is assumed that the scaling is the same for both axes,
+        // if not, we choose the smaller scale to maintain the circle's proportions
+        const scale = Math.min(this.scale.x, this.scale.y);
+        const scaledRadius = radius * scale;
+
+        // Return the scaled radius
+        return scaledRadius;
+    }
 }

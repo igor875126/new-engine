@@ -33,6 +33,7 @@ export default class Listeners {
         this.environment = environment;
         this.camera = camera;
         this.scalingManager = scalingManager;
+        this.register();
     }
 
     /**
@@ -48,9 +49,9 @@ export default class Listeners {
     }
 
     /**
-     * Call mouse out event on all needed game objects
+     * Call mouse out event on all not hovered game objects
      */
-    public callMouseOutEventOnAllNeededGameObjects(): void {
+    public callMouseOutEventOnAllNotHoveredGameObjects(): void {
         // Get mouse position
         const mousePosition = this.scalingManager.virtualToScreen(this.input.getMousePosition());
 
@@ -61,33 +62,30 @@ export default class Listeners {
                 continue;
             }
 
-            // Calculate virtual to screen coordinates
+            // Calculate scaling
             const scaledPosition = this.scalingManager.virtualToScreen(gameObject.position);
-            const scaledOffset = this.scalingManager.virtualToScreen(gameObject.collider.offset);
             const scaledCameraOffset = this.scalingManager.virtualToScreen(this.camera.getPositionOffsetForRenderer(gameObject));
-            const positionWithOffset = scaledPosition.add(scaledOffset).subtract(scaledCameraOffset);
+            const resultingPosition = scaledPosition.subtract(scaledCameraOffset);
 
-            // In case gameObjects collider is a circle collider
-            if (gameObject.collider instanceof CircleCollider) {
+            // In case gameObjects collider is a rect collider
+            if (gameObject.collider instanceof RectCollider) {
                 // Calculate scaled size
-                const scale = this.scalingManager.getScale();
-                const uniformScaleFactor = Math.min(scale.x, scale.y);
-                const scaledRadius = gameObject.collider.radius * uniformScaleFactor;
+                const scaledSize = this.scalingManager.boxSizeVirtualToScreen(gameObject.collider.size);
 
                 // Check if mouse cursor is no more above the collider
-                if (!CollisionChecker.pointInsideCircle(mousePosition.x, mousePosition.y, positionWithOffset.x, positionWithOffset.y, scaledRadius)) {
+                if (!CollisionChecker.pointInsideRectangleCollision(mousePosition.x - scaledCameraOffset.x, mousePosition.y - scaledCameraOffset.y, resultingPosition.x - scaledSize.x / 2, resultingPosition.y - scaledSize.y / 2, scaledSize.x, scaledSize.y)) {
                     gameObject.onMouseOut();
                     this.removeGameObjectFromAlreadyHoveredList(gameObject);
                 }
             }
 
-            // In case gameObjects collider is a rect collider
-            if (gameObject.collider instanceof RectCollider) {
+            // In case gameObjects collider is a circle collider
+            if (gameObject.collider instanceof CircleCollider) {
                 // Calculate scaled size
-                const scaledSize = this.scalingManager.virtualToScreen(gameObject.collider.size);
+                const scaledRadius = this.scalingManager.circleRadiusVirtualToScreen(gameObject.collider.radius);
 
                 // Check if mouse cursor is no more above the collider
-                if (!CollisionChecker.pointInsideRectangle(mousePosition.x, mousePosition.y, positionWithOffset.x, positionWithOffset.y, scaledSize.x, scaledSize.y)) {
+                if (!CollisionChecker.pointInsideCircleCollision(mousePosition.x - scaledCameraOffset.x, mousePosition.y - scaledCameraOffset.y, resultingPosition.x, resultingPosition.y, scaledRadius)) {
                     gameObject.onMouseOut();
                     this.removeGameObjectFromAlreadyHoveredList(gameObject);
                 }
@@ -133,7 +131,7 @@ export default class Listeners {
             const virtualCoordinates = this.scalingManager.screenToVirtual(new Vector2(x, y));
 
             // Inject into Input class
-            this.input.mouse.mousePosition = virtualCoordinates;
+            this.input.mouse.mousePosition = virtualCoordinates.add(this.camera.position);
         });
 
         // Mouse click event
@@ -160,8 +158,6 @@ export default class Listeners {
             // Get mouse position
             const mousePosition = this.scalingManager.virtualToScreen(this.input.getMousePosition());
 
-
-
             // Call onMouseOver method of all gameObjects
             for (const gameObject of this.gameObjectsManager.getAll()) {
                 // In case gameObject does not have any collider attached to it
@@ -174,22 +170,20 @@ export default class Listeners {
                     continue;
                 }
 
-                // Calculate virtual to screen coordinates
+                // Calculate scaling
                 const scaledPosition = this.scalingManager.virtualToScreen(gameObject.position);
-                const scaledOffset = this.scalingManager.virtualToScreen(gameObject.collider.offset);
                 const scaledCameraOffset = this.scalingManager.virtualToScreen(this.camera.getPositionOffsetForRenderer(gameObject));
-                const positionWithOffset = scaledPosition.add(scaledOffset).subtract(scaledCameraOffset);
+                const resultingPosition = scaledPosition.subtract(scaledCameraOffset);
 
-                // In case gameObjects collider is a circle collider
-                if (gameObject.collider instanceof CircleCollider) {
+                // In case gameObjects collider is a rect collider
+                if (gameObject.collider instanceof RectCollider) {
                     // Calculate scaled size
-                    const scale = this.scalingManager.getScale();
-                    const uniformScaleFactor = Math.min(scale.x, scale.y);
-                    const scaledRadius = gameObject.collider.radius * uniformScaleFactor;
+                    const scaledSize = this.scalingManager.boxSizeVirtualToScreen(gameObject.collider.size);
 
                     // Check if mouse cursor is above the collider
-                    if (CollisionChecker.pointInsideCircle(mousePosition.x, mousePosition.y, positionWithOffset.x, positionWithOffset.y, scaledRadius)) {
-                        gameObject.onMouseOver();
+                    const collisionPoint = CollisionChecker.pointInsideRectangleCollision(mousePosition.x - scaledCameraOffset.x, mousePosition.y - scaledCameraOffset.y, resultingPosition.x - scaledSize.x / 2, resultingPosition.y - scaledSize.y / 2, scaledSize.x, scaledSize.y);
+                    if (collisionPoint) {
+                        gameObject.onMouseOver(this.scalingManager.screenToVirtual(collisionPoint.add(scaledCameraOffset)));
                         this.mouseOverGameObjects.push(gameObject);
 
                         // Break the loop here, because we don't want to call onMouseOver of all layered objects, only the most top one
@@ -197,14 +191,15 @@ export default class Listeners {
                     }
                 }
 
-                // In case gameObjects collider is a rect collider
-                if (gameObject.collider instanceof RectCollider) {
+                // In case gameObjects collider is a circle collider
+                if (gameObject.collider instanceof CircleCollider) {
                     // Calculate scaled size
-                    const scaledSize = this.scalingManager.virtualToScreen(gameObject.collider.size);
+                    const scaledRadius = this.scalingManager.circleRadiusVirtualToScreen(gameObject.collider.radius);
 
                     // Check if mouse cursor is above the collider
-                    if (CollisionChecker.pointInsideRectangle(mousePosition.x, mousePosition.y, positionWithOffset.x, positionWithOffset.y, scaledSize.x, scaledSize.y)) {
-                        gameObject.onMouseOver();
+                    const collisionPoint = CollisionChecker.pointInsideCircleCollision(mousePosition.x - scaledCameraOffset.x, mousePosition.y - scaledCameraOffset.y, resultingPosition.x, resultingPosition.y, scaledRadius);
+                    if (collisionPoint) {
+                        gameObject.onMouseOver(this.scalingManager.screenToVirtual(collisionPoint.add(scaledCameraOffset)));
                         this.mouseOverGameObjects.push(gameObject);
 
                         // Break the loop here, because we don't want to call onMouseOver of all layered objects, only the most top one
@@ -236,14 +231,19 @@ export default class Listeners {
                 const touch = event.touches[i];
                 const x = touch.clientX - rect.left;
                 const y = touch.clientY - rect.top;
-                this.input.touch.touchPositions[i] = new Vector2(x, y);
+
+                // Translate real screen coordinates to virtual
+                const virtualCoordinates = this.scalingManager.screenToVirtual(new Vector2(x, y));
+
+                // Inject into Input class
+                this.input.touch.touchPositions[i] = virtualCoordinates.add(this.camera.position);
             }
 
             // Prevent default event
             event.preventDefault();
         });
 
-        // Touch start
+        // Touch move
         this.canvas.addEventListener('touchmove', (event) => {
             // Get relative coordinates
             const rect = this.canvas.getBoundingClientRect();
@@ -253,7 +253,12 @@ export default class Listeners {
                 const touch = event.touches[i];
                 const x = touch.clientX - rect.left;
                 const y = touch.clientY - rect.top;
-                this.input.touch.touchPositions[i] = new Vector2(x, y);
+
+                // Translate real screen coordinates to virtual
+                const virtualCoordinates = this.scalingManager.screenToVirtual(new Vector2(x, y));
+
+                // Inject into Input class
+                this.input.touch.touchPositions[i] = virtualCoordinates.add(this.camera.position);
             }
 
             // Prevent default event
@@ -265,8 +270,11 @@ export default class Listeners {
             // Update amount of fingers detected
             this.input.touch.fingersDetected = event.touches.length;
 
+            // Get touch position
+            const touchPosition = this.scalingManager.virtualToScreen(this.input.touch.touchPositions[this.input.touch.fingersDetected]);
+
             // Call on mouse click method on game objects
-            this.callOnMouseClickMethodOnGameObjects(this.input.touch.touchPositions[this.input.touch.fingersDetected].x, this.input.touch.touchPositions[this.input.touch.fingersDetected].y);
+            this.callOnMouseClickMethodOnGameObjects(touchPosition.x, touchPosition.y);
 
             // Get relative coordinates
             const rect = this.canvas.getBoundingClientRect();
@@ -284,6 +292,12 @@ export default class Listeners {
                 const x = touch.clientX - rect.left;
                 const y = touch.clientY - rect.top;
                 this.input.touch.touchPositions[i] = new Vector2(x, y);
+
+                // Translate real screen coordinates to virtual
+                const virtualCoordinates = this.scalingManager.screenToVirtual(new Vector2(x, y));
+
+                // Inject into Input class
+                this.input.touch.touchPositions[i] = virtualCoordinates.add(this.camera.position);
             }
 
             // Set state of touch event only when there are no touches anymore
@@ -347,36 +361,35 @@ export default class Listeners {
                 continue;
             }
 
-            // Calculate virtual to screen coordinates
+            // Calculate scaling
             const scaledPosition = this.scalingManager.virtualToScreen(gameObject.position);
-            const scaledOffset = this.scalingManager.virtualToScreen(gameObject.collider.offset);
             const scaledCameraOffset = this.scalingManager.virtualToScreen(this.camera.getPositionOffsetForRenderer(gameObject));
-            const positionWithOffset = scaledPosition.add(scaledOffset).subtract(scaledCameraOffset);
+            const resultingPosition = scaledPosition.subtract(scaledCameraOffset);
 
-            // In case gameObjects collider is a circle collider
-            if (gameObject.collider instanceof CircleCollider) {
+            // In case game object collider is a rect collider
+            if (gameObject.collider instanceof RectCollider) {
                 // Calculate scaled size
-                const scale = this.scalingManager.getScale();
-                const uniformScaleFactor = Math.min(scale.x, scale.y);
-                const scaledRadius = gameObject.collider.radius * uniformScaleFactor;
+                const scaledSize = this.scalingManager.boxSizeVirtualToScreen(gameObject.collider.size);
 
                 // Check if mouse cursor is above the collider
-                if (CollisionChecker.pointInsideCircle(x, y, positionWithOffset.x, positionWithOffset.y, scaledRadius)) {
-                    gameObject.onMouseClick();
+                const collisionPoint = CollisionChecker.pointInsideRectangleCollision(x - scaledCameraOffset.x, y - scaledCameraOffset.y, resultingPosition.x - scaledSize.x / 2, resultingPosition.y - scaledSize.y / 2, scaledSize.x, scaledSize.y);
+                if (collisionPoint) {
+                    gameObject.onMouseClick(this.scalingManager.screenToVirtual(collisionPoint.add(scaledCameraOffset)));
 
                     // Break the loop here, because we don't want to call onMouseClick of all layered objects, only the most top one
                     break;
                 }
             }
 
-            // In case gameObjects collider is a rect collider
-            if (gameObject.collider instanceof RectCollider) {
+            // In case game object collider is a circle collider
+            if (gameObject.collider instanceof CircleCollider) {
                 // Calculate scaled size
-                const scaledSize = this.scalingManager.virtualToScreen(gameObject.collider.size);
+                const scaledRadius = this.scalingManager.circleRadiusVirtualToScreen(gameObject.collider.radius);
 
                 // Check if mouse cursor is above the collider
-                if (CollisionChecker.pointInsideRectangle(x, y, positionWithOffset.x, positionWithOffset.y, scaledSize.x, scaledSize.y)) {
-                    gameObject.onMouseClick();
+                const collisionPoint = CollisionChecker.pointInsideCircleCollision(x - scaledCameraOffset.x, y - scaledCameraOffset.y, resultingPosition.x, resultingPosition.y, scaledRadius);
+                if (collisionPoint) {
+                    gameObject.onMouseClick(this.scalingManager.screenToVirtual(collisionPoint.add(scaledCameraOffset)));
 
                     // Break the loop here, because we don't want to call onMouseClick of all layered objects, only the most top one
                     break;

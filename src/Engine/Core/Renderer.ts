@@ -115,17 +115,17 @@ export default class Renderer {
             return;
         }
 
-        // Calculate the scaled position, size, and camera offset
+        // Calculate scaling
         const scaledPosition = this.scalingManager.virtualToScreen(gameObject.position);
-        const scaledSize = this.scalingManager.virtualToScreen(new Vector2(gameObject.width, gameObject.height));
+        const scaledSize = this.scalingManager.boxSizeVirtualToScreen(new Vector2(gameObject.width, gameObject.height));
         const scaledCameraOffset = this.scalingManager.virtualToScreen(this.camera.getPositionOffsetForRenderer(gameObject));
-        const positionWithOffset = scaledPosition.subtract(scaledCameraOffset);
+        const resultingPosition = scaledPosition.subtract(scaledSize.divide(2)).subtract(scaledCameraOffset);
 
         // Draw in context
         this.context.save();
         this.context.beginPath();
         this.context.fillStyle = gameObject.color.getRgba();
-        this.context.fillRect(positionWithOffset.x, positionWithOffset.y, scaledSize.x, scaledSize.y);
+        this.context.fillRect(resultingPosition.x, resultingPosition.y, scaledSize.x, scaledSize.y);
         this.context.stroke();
         this.context.restore();
     }
@@ -139,21 +139,16 @@ export default class Renderer {
             return;
         }
 
-        // Calculate the scaled position, offset, and camera offset
+        // Calculate scaling
         const scaledPosition = this.scalingManager.virtualToScreen(gameObject.position);
         const scaledCameraOffset = this.scalingManager.virtualToScreen(this.camera.getPositionOffsetForRenderer(gameObject));
-        const positionWithOffset = scaledPosition.subtract(scaledCameraOffset);
-
-        // Calculate a uniform scaling factor, typically you would use the smallest scaling factor
-        // to prevent circles from stretching into ovals.
-        const scale = this.scalingManager.getScale();
-        const uniformScaleFactor = Math.min(scale.x, scale.y);
-        const scaledRadius = gameObject.radius * uniformScaleFactor;
+        const resultingPosition = scaledPosition.subtract(scaledCameraOffset);
+        const scaledRadius = this.scalingManager.circleRadiusVirtualToScreen(gameObject.radius);
 
         // Draw in context
         this.context.save();
         this.context.beginPath();
-        this.context.arc(positionWithOffset.x, positionWithOffset.y, scaledRadius, 0, 2 * Math.PI, false);
+        this.context.arc(resultingPosition.x, resultingPosition.y, scaledRadius, 0, 2 * Math.PI, false);
         this.context.fillStyle = gameObject.color.getRgba();
         this.context.fill();
         this.context.restore();
@@ -174,18 +169,18 @@ export default class Renderer {
             return;
         }
 
-        // Calculate the scaled position, size, and camera offset
+        // Calculate scaling
         const scaledPosition = this.scalingManager.virtualToScreen(gameObject.position);
-        const scaledSize = this.scalingManager.virtualToScreen(new Vector2(gameObject.width, gameObject.height));
+        const scaledSize = this.scalingManager.boxSizeVirtualToScreen(new Vector2(gameObject.width, gameObject.height));
         const scaledCameraOffset = this.scalingManager.virtualToScreen(this.camera.getPositionOffsetForRenderer(gameObject));
-        const positionWithOffset = scaledPosition.subtract(scaledCameraOffset);
+        const resultingPosition = scaledPosition.subtract(scaledCameraOffset);
 
         // Set image smoothing (taken from the options)
         this.context.imageSmoothingEnabled = this.options.imageSmoothingEnabled;
 
         // Draw
         this.context.save();
-        this.context.translate(positionWithOffset.x, positionWithOffset.y);
+        this.context.translate(resultingPosition.x, resultingPosition.y);
         this.context.rotate(gameObject.angle * Math.PI / 180);
         this.context.globalAlpha = gameObject.color.a;
         if (gameObject.shadow) {
@@ -215,15 +210,12 @@ export default class Renderer {
             return;
         }
 
-        // Get the scaling factor from the ScalingManager
-        const scale = this.scalingManager.getScale();
-        const uniformScaleFactor = Math.min(scale.x, scale.y); // Use the smallest scale factor for uniform scaling
-
-        // Apply scaling to position
+        // Calculate scaling
         const scaledPosition = this.scalingManager.virtualToScreen(gameObject.position);
         const cameraOffset = this.scalingManager.virtualToScreen(this.camera.getPositionOffsetForRenderer(gameObject));
-
-        // Apply scaling to font size
+        const resultingPosition = scaledPosition.subtract(cameraOffset);
+        const scale = this.scalingManager.getScale();
+        const uniformScaleFactor = Math.min(scale.x, scale.y);
         const scaledFontSize = gameObject.fontSize * uniformScaleFactor;
 
         // Draw in context with scaling applied
@@ -233,12 +225,8 @@ export default class Renderer {
         this.context.textAlign = 'center'; // Align text to center horizontally
         this.context.textBaseline = 'middle'; // Align text to middle vertically
 
-        // Adjust position to consider camera offset and text dimensions
-        const positionX = scaledPosition.x - cameraOffset.x;
-        const positionY = scaledPosition.y - cameraOffset.y;
-
         // Draw the text at the scaled position
-        this.context.fillText(gameObject.text, positionX, positionY);
+        this.context.fillText(gameObject.text, resultingPosition.x, resultingPosition.y);
         this.context.restore();
     }
 
@@ -251,12 +239,12 @@ export default class Renderer {
             return;
         }
 
-        // Calculate the scaled position, size, and camera offset
+        // Calculate scaling
         const scaledPosition = this.scalingManager.virtualToScreen(gameObject.position);
         const scaledEndPosition = this.scalingManager.virtualToScreen(gameObject.endPoint);
         const scaledSize = this.scalingManager.virtualToScreen(new Vector2(gameObject.lineWidth, gameObject.lineWidth));
         const scaledCameraOffset = this.scalingManager.virtualToScreen(this.camera.getPositionOffsetForRenderer(gameObject));
-        const positionWithOffset = scaledPosition.subtract(scaledCameraOffset);
+        const resultingPosition = scaledPosition.subtract(scaledCameraOffset);
         const endPositionWithOffset = scaledEndPosition.subtract(scaledCameraOffset);
 
         // Draw in context
@@ -265,7 +253,7 @@ export default class Renderer {
         this.context.strokeStyle = gameObject.color.hex;
         this.context.lineWidth = scaledSize.x;
         this.context.lineCap = 'round';
-        this.context.moveTo(positionWithOffset.x, positionWithOffset.y);
+        this.context.moveTo(resultingPosition.x, resultingPosition.y);
         this.context.lineTo(endPositionWithOffset.x, endPositionWithOffset.y);
         this.context.stroke();
         this.context.restore();
@@ -283,24 +271,23 @@ export default class Renderer {
         // Fill style of colliders
         const fillStyle = 'rgba(200, 50, 129, 0.6)';
 
-        // Calculate the scaled position, offset, and camera offset
+        // Calculate scaling
         const scaledPosition = this.scalingManager.virtualToScreen(gameObject.position);
-        const scaledOffset = this.scalingManager.virtualToScreen(gameObject.collider.offset);
         const scaledCameraOffset = this.scalingManager.virtualToScreen(this.camera.getPositionOffsetForRenderer(gameObject));
-        const positionWithOffset = scaledPosition.add(scaledOffset).subtract(scaledCameraOffset);
+        const resultingPosition = scaledPosition.subtract(scaledCameraOffset);
 
         // In case game object collider is a rect collider
         if (gameObject.collider instanceof RectCollider) {
             // Calculate scaled size
-            const scaledSize = this.scalingManager.virtualToScreen(gameObject.collider.size);
+            const scaledSize = this.scalingManager.boxSizeVirtualToScreen(gameObject.collider.size);
 
             // Draw in context with scaling applied
             this.context.save();
             this.context.beginPath();
             this.context.fillStyle = fillStyle;
             this.context.fillRect(
-                positionWithOffset.x,
-                positionWithOffset.y,
+                resultingPosition.x - scaledSize.x / 2,
+                resultingPosition.y - scaledSize.y / 2,
                 scaledSize.x,
                 scaledSize.y
             );
@@ -311,20 +298,15 @@ export default class Renderer {
 
         // In case game object collider is a circle collider
         if (gameObject.collider instanceof CircleCollider) {
-            // Calculate a uniform scaling factor, typically you would use the smallest scaling factor
-            // to prevent circles from stretching into ovals.
-            const scale = this.scalingManager.getScale();
-            const uniformScaleFactor = Math.min(scale.x, scale.y);
-
-            // Apply uniform scaling to the radius.
-            const scaledRadius = gameObject.collider.radius * uniformScaleFactor;
+            // Calculate scaled size
+            const scaledRadius = this.scalingManager.circleRadiusVirtualToScreen(gameObject.collider.radius);
 
             // Draw in context with scaling applied
             this.context.save();
             this.context.beginPath();
             this.context.arc(
-                positionWithOffset.x,
-                positionWithOffset.y,
+                resultingPosition.x,
+                resultingPosition.y,
                 scaledRadius,
                 0,
                 2 * Math.PI,
