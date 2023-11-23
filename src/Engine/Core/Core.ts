@@ -1,5 +1,4 @@
-import CanvasContextException from "../../Exceptions/CanvasContextException";
-import CollisionChecker from "../../Helpers/CollisionChecker";
+import CollisionChecker from "../Utilities/CollisionChecker";
 import Helper from "../../Helpers/Helper";
 import CoreOptionsType from "../../Types/CoreOptionsType";
 import EventManager from "../Managers/EventManager";
@@ -12,15 +11,17 @@ import Locale from "../Utilities/Locale";
 import Scene from "../Utilities/Scene";
 import Time from "../Utilities/Time";
 import IOC from "./IOC";
-import Listeners from "./Listeners";
 import Renderer from "./Renderer";
 import ResourceLoader from "./ResourceLoader";
-import { ScalingManager } from "./ScalingManager";
+import DebugListeners from "../Listeners/DebugListeners";
+import KeyboardListeners from "../Listeners/KeyboardListeners";
+import MouseListeners from "../Listeners/MouseListeners";
+import TouchListeners from "../Listeners/TouchListeners";
+import WindowListeners from "../Listeners/WindowListeners";
 
 export default class Core {
 
     public canvas: HTMLCanvasElement;
-    public scalingManager: ScalingManager;
     public renderer: Renderer;
     public gameObjectsManager: GameObjectsManager;
     public sceneManager: SceneManager;
@@ -30,10 +31,15 @@ export default class Core {
     public eventManager: EventManager;
     public audioContext: AudioContext;
     public locale: Locale;
+    public collisionChecker: CollisionChecker;
     public camera: Camera;
+    public debugListeners: DebugListeners;
+    public keyboardListeners: KeyboardListeners;
+    public mouseListeners: MouseListeners;
+    public touchListeners: TouchListeners;
+    public windowListeners: WindowListeners;
     public options: CoreOptionsType;
 
-    private listeners: Listeners;
     private currentTimestamp: number = 0;
     private gameLoopStarted: boolean = false;
     private fixedLoopStarted: boolean = false;
@@ -42,64 +48,41 @@ export default class Core {
      * Constructor
      */
     constructor(canvas: HTMLCanvasElement, options: CoreOptionsType) {
-        // Set link to canvas in class properties
+        // Put components to IOC
+        IOC.registerSingleton('Core', this);
+
+        // Remember arguments
         this.canvas = canvas;
-
-        // Set core options
         this.options = options;
-
-        // Disable right mouse button context menu
-        canvas.oncontextmenu = (e) => { e.preventDefault(); e.stopPropagation(); };
-
-        // Get canvas 2D context
-        const canvas2DContext = canvas.getContext('2d');
-
-        // In case canvas context could not be get
-        if (!canvas2DContext) {
-            throw new CanvasContextException('Canvas 2D context could not be retrieved!');
-        }
 
         // Instantiate all core components
         this.audioContext = new AudioContext();
         this.camera = new Camera();
-        this.scalingManager = new ScalingManager(options.rendererOptions.resolution);
-        this.renderer = new Renderer(canvas, canvas2DContext, this.camera, this.scalingManager, this.options.rendererOptions);
+        this.renderer = new Renderer();
         this.eventManager = new EventManager();
-        this.gameObjectsManager = new GameObjectsManager(this.eventManager);
+        this.gameObjectsManager = new GameObjectsManager();
         this.input = new Input();
-        this.resourceLoader = new ResourceLoader(this.audioContext);
-        this.sceneManager = new SceneManager(this.resourceLoader, this.gameObjectsManager);
-        this.soundManager = new SoundManager(this.resourceLoader, this.audioContext);
-        this.locale = new Locale(this.resourceLoader, this.options.language);
+        this.resourceLoader = new ResourceLoader();
+        this.sceneManager = new SceneManager();
+        this.soundManager = new SoundManager();
+        this.locale = new Locale();
+        this.collisionChecker = new CollisionChecker();
 
-        // Register input listeners
-        this.listeners = new Listeners(this.input, this.canvas, this.renderer, this.gameObjectsManager, this.options.environment, this.camera, this.scalingManager);
-
-        // Put core components to IOC
-        IOC.registerSingleton('Renderer', this.renderer);
-        IOC.registerSingleton('GameObjectsManager', this.gameObjectsManager);
-        IOC.registerSingleton('Input', this.input);
-        IOC.registerSingleton('ResourceLoader', this.resourceLoader);
-        IOC.registerSingleton('SceneManager', this.sceneManager);
-        IOC.registerSingleton('SoundManager', this.soundManager);
-        IOC.registerSingleton('EventManager', this.eventManager);
-        IOC.registerSingleton('Locale', this.locale);
-        IOC.registerSingleton('Core', this);
-        IOC.registerSingleton('Camera', this.camera);
+        // Register event listeners
+        this.debugListeners = new DebugListeners();
+        this.debugListeners.registerListeners();
+        this.keyboardListeners = new KeyboardListeners();
+        this.keyboardListeners.registerListeners();
+        this.mouseListeners = new MouseListeners();
+        this.mouseListeners.registerListeners();
+        this.touchListeners = new TouchListeners();
+        this.touchListeners.registerListeners();
+        this.windowListeners = new WindowListeners();
+        this.windowListeners.registerListeners();
 
         // Set time
         Time.deltaTime = this.currentTimestamp;
         Time.timestamp = this.currentTimestamp;
-
-        // Display fps counter at start when enabled
-        if (this.options.debug.toggleFpsRenderingAtStart) {
-            this.renderer.toggleDebugFpsRendering();
-        }
-
-        // Display colliders at start when enabled
-        if (this.options.debug.toggleDebugColliderRenderingAtStart) {
-            this.renderer.toggleDebugColliderRendering();
-        }
     }
 
     /**
@@ -167,7 +150,7 @@ export default class Core {
         // this.input.keyboardButtonsStates = {};
 
         // Call mouse out event on all needed game objects in the end of the frame
-        this.listeners.callMouseOutEventOnAllNotHoveredGameObjects();
+        this.mouseListeners.callMouseOutEventOnAllNotHoveredGameObjects();
 
         // Set current timestamp
         this.currentTimestamp = timestamp;
@@ -196,7 +179,7 @@ export default class Core {
         for (const gameObject1 of gameObjectsWithCollider) {
             for (const gameObject2 of gameObjectsWithCollider) {
                 // Check collision
-                const collision = CollisionChecker.checkCollisionBetweenGameObjects(gameObject1, gameObject2, this.scalingManager, this.camera);
+                const collision = this.collisionChecker.checkCollisionBetweenGameObjects(gameObject1, gameObject2);
 
                 // In case collision happened
                 if (collision) {

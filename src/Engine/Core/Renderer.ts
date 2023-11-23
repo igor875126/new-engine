@@ -4,35 +4,33 @@ import LineObject from "../../Entities/Primitives/LineObject";
 import RectObject from "../../Entities/Primitives/RectObject";
 import SpriteObject from "../../Entities/Primitives/SpriteObject";
 import TextObject from "../../Entities/Primitives/TextObject";
-import CoreOptionsType from "../../Types/CoreOptionsType";
+import CircleCollider from "../../Colliders/CircleCollider";
+import RectCollider from "../../Colliders/RectCollider";
 import Camera from "../Utilities/Camera";
-import CircleCollider from "../Colliders/CircleCollider";
-import RectCollider from "../Colliders/RectCollider";
-import { ScalingManager } from "./ScalingManager";
 import Time from "../Utilities/Time";
-import Vector2 from "../Utilities/Vector2";
+import Core from "./Core";
+import IOC from "./IOC";
 
 export default class Renderer {
 
+    private core: Core;
     public canvas: HTMLCanvasElement;
-    public canvasCenter: Vector2;
     public context: CanvasRenderingContext2D;
     public camera: Camera;
-    public scalingManager: ScalingManager;
-    public options: CoreOptionsType['rendererOptions'];
     private renderQueue: GameObject[] = [];
-    private debug: { colliderRenderingEnabled: boolean, fpsRenderingEnabled: boolean } = { colliderRenderingEnabled: false, fpsRenderingEnabled: false, };
+    private debug: { colliderRenderingEnabled: boolean, fpsRenderingEnabled: boolean } = {
+        colliderRenderingEnabled: false,
+        fpsRenderingEnabled: false,
+    };
 
     /**
      * Constructor
      */
-    constructor(canvas: HTMLCanvasElement, context: CanvasRenderingContext2D, camera: Camera, scalingManager: ScalingManager, options: CoreOptionsType['rendererOptions']) {
-        this.canvas = canvas;
-        this.context = context;
-        this.camera = camera;
-        this.scalingManager = scalingManager;
-        this.options = options;
-        this.resizeCanvas();
+    constructor() {
+        this.core = IOC.makeSingleton('Core');
+        this.canvas = this.core.canvas;
+        this.context = this.canvas.getContext('2d')!;
+        this.camera = this.core.camera;
     }
 
     /**
@@ -81,18 +79,6 @@ export default class Renderer {
     }
 
     /**
-     * Resize canvas
-     */
-    public resizeCanvas(): void {
-        // Change canvas width and height
-        this.canvas.width = window.innerWidth;
-        this.canvas.height = window.innerHeight;
-
-        // After canvas resize, remember the center of the canvas
-        this.canvasCenter = new Vector2(this.canvas.width / 2, this.canvas.height / 2);
-    }
-
-    /**
      * Toggle debug fps rendering
      */
     public toggleDebugFpsRendering(): void {
@@ -115,17 +101,11 @@ export default class Renderer {
             return;
         }
 
-        // Calculate scaling
-        const scaledPosition = this.scalingManager.virtualToScreen(gameObject.position);
-        const scaledSize = this.scalingManager.boxSizeVirtualToScreen(new Vector2(gameObject.width, gameObject.height));
-        const scaledCameraOffset = this.scalingManager.virtualToScreen(this.camera.getPositionOffsetForRenderer(gameObject));
-        const resultingPosition = scaledPosition.subtract(scaledSize.divide(2)).subtract(scaledCameraOffset);
-
         // Draw in context
         this.context.save();
         this.context.beginPath();
         this.context.fillStyle = gameObject.color.getRgba();
-        this.context.fillRect(resultingPosition.x, resultingPosition.y, scaledSize.x, scaledSize.y);
+        this.context.fillRect(gameObject.position.x - gameObject.width / 2 - this.camera.getPositionOffsetForRenderer(gameObject).x, gameObject.position.y - gameObject.height / 2 - this.camera.getPositionOffsetForRenderer(gameObject).y, gameObject.width, gameObject.height);
         this.context.stroke();
         this.context.restore();
     }
@@ -139,16 +119,10 @@ export default class Renderer {
             return;
         }
 
-        // Calculate scaling
-        const scaledPosition = this.scalingManager.virtualToScreen(gameObject.position);
-        const scaledCameraOffset = this.scalingManager.virtualToScreen(this.camera.getPositionOffsetForRenderer(gameObject));
-        const resultingPosition = scaledPosition.subtract(scaledCameraOffset);
-        const scaledRadius = this.scalingManager.circleRadiusVirtualToScreen(gameObject.radius);
-
         // Draw in context
         this.context.save();
         this.context.beginPath();
-        this.context.arc(resultingPosition.x, resultingPosition.y, scaledRadius, 0, 2 * Math.PI, false);
+        this.context.arc(gameObject.position.x - this.camera.getPositionOffsetForRenderer(gameObject).x, gameObject.position.y - this.camera.getPositionOffsetForRenderer(gameObject).y, gameObject.radius, 0, 2 * Math.PI, false);
         this.context.fillStyle = gameObject.color.getRgba();
         this.context.fill();
         this.context.restore();
@@ -169,18 +143,12 @@ export default class Renderer {
             return;
         }
 
-        // Calculate scaling
-        const scaledPosition = this.scalingManager.virtualToScreen(gameObject.position);
-        const scaledSize = this.scalingManager.boxSizeVirtualToScreen(new Vector2(gameObject.width, gameObject.height));
-        const scaledCameraOffset = this.scalingManager.virtualToScreen(this.camera.getPositionOffsetForRenderer(gameObject));
-        const resultingPosition = scaledPosition.subtract(scaledCameraOffset);
-
         // Set image smoothing (taken from the options)
-        this.context.imageSmoothingEnabled = this.options.imageSmoothingEnabled;
+        this.context.imageSmoothingEnabled = this.core.options.rendererOptions.imageSmoothingEnabled;
 
         // Draw
         this.context.save();
-        this.context.translate(resultingPosition.x, resultingPosition.y);
+        this.context.translate(gameObject.position.x - this.camera.getPositionOffsetForRenderer(gameObject).x, gameObject.position.y - this.camera.getPositionOffsetForRenderer(gameObject).y);
         this.context.rotate(gameObject.angle * Math.PI / 180);
         this.context.globalAlpha = gameObject.color.a;
         if (gameObject.shadow) {
@@ -193,10 +161,10 @@ export default class Renderer {
             gameObject.sprite.positionInAtlasY,
             gameObject.sprite.spriteWidth,
             gameObject.sprite.spriteHeight,
-            -scaledSize.x / 2,
-            -scaledSize.y / 2,
-            scaledSize.x,
-            scaledSize.y
+            -gameObject.width / 2,
+            -gameObject.height / 2,
+            gameObject.width,
+            gameObject.height
         );
         this.context.restore();
     }
@@ -210,23 +178,19 @@ export default class Renderer {
             return;
         }
 
-        // Calculate scaling
-        const scaledPosition = this.scalingManager.virtualToScreen(gameObject.position);
-        const cameraOffset = this.scalingManager.virtualToScreen(this.camera.getPositionOffsetForRenderer(gameObject));
-        const resultingPosition = scaledPosition.subtract(cameraOffset);
-        const scale = this.scalingManager.getScale();
-        const uniformScaleFactor = Math.min(scale.x, scale.y);
-        const scaledFontSize = gameObject.fontSize * uniformScaleFactor;
+        // Get text dimensions
+        const textDimensions = gameObject.getTextDimensions();
 
-        // Draw in context with scaling applied
+        // Draw in context
         this.context.save();
         this.context.fillStyle = gameObject.color.getRgba();
-        this.context.font = `${scaledFontSize}px ${gameObject.fontName}`;
-        this.context.textAlign = 'center'; // Align text to center horizontally
-        this.context.textBaseline = 'middle'; // Align text to middle vertically
+        this.context.font = `${gameObject.fontSize}px ${gameObject.fontName}`;
+        // this.context.textBaseline = 'alphabetic';
+        // this.context.fillText(gameObject.text, gameObject.position.x - textDimensions.width / 2 - this.camera.getPositionOffsetForRenderer(gameObject).x, gameObject.position.y - this.camera.getPositionOffsetForRenderer(gameObject).y);
+        // this.context.textBaseline = 'top';
+        // this.context.fillText(gameObject.text, gameObject.position.x - textDimensions.width / 2 - this.camera.getPositionOffsetForRenderer(gameObject).x, gameObject.position.y - textDimensions.height / 2 - this.camera.getPositionOffsetForRenderer(gameObject).y);
 
-        // Draw the text at the scaled position
-        this.context.fillText(gameObject.text, resultingPosition.x, resultingPosition.y);
+        this.context.fillText(gameObject.text, gameObject.position.x - textDimensions.width / 2 - this.camera.getPositionOffsetForRenderer(gameObject).x, gameObject.position.y + textDimensions.height / 2 - this.camera.getPositionOffsetForRenderer(gameObject).y);
         this.context.restore();
     }
 
@@ -239,22 +203,14 @@ export default class Renderer {
             return;
         }
 
-        // Calculate scaling
-        const scaledPosition = this.scalingManager.virtualToScreen(gameObject.position);
-        const scaledEndPosition = this.scalingManager.virtualToScreen(gameObject.endPoint);
-        const scaledSize = this.scalingManager.virtualToScreen(new Vector2(gameObject.lineWidth, gameObject.lineWidth));
-        const scaledCameraOffset = this.scalingManager.virtualToScreen(this.camera.getPositionOffsetForRenderer(gameObject));
-        const resultingPosition = scaledPosition.subtract(scaledCameraOffset);
-        const endPositionWithOffset = scaledEndPosition.subtract(scaledCameraOffset);
-
         // Draw in context
         this.context.save();
         this.context.beginPath();
         this.context.strokeStyle = gameObject.color.hex;
-        this.context.lineWidth = scaledSize.x;
+        this.context.lineWidth = gameObject.lineWidth;
         this.context.lineCap = 'round';
-        this.context.moveTo(resultingPosition.x, resultingPosition.y);
-        this.context.lineTo(endPositionWithOffset.x, endPositionWithOffset.y);
+        this.context.moveTo(gameObject.position.x - this.camera.getPositionOffsetForRenderer(gameObject).x, gameObject.position.y - this.camera.getPositionOffsetForRenderer(gameObject).y);
+        this.context.lineTo(gameObject.endPoint.x - this.camera.getPositionOffsetForRenderer(gameObject).x, gameObject.endPoint.y - this.camera.getPositionOffsetForRenderer(gameObject).y);
         this.context.stroke();
         this.context.restore();
     }
@@ -263,7 +219,7 @@ export default class Renderer {
      * Render collider
      */
     private renderCollider(gameObject: GameObject): void {
-        // In case game object does not have any colliders
+        // In case game object does not has any colliders
         if (!gameObject.collider) {
             return;
         }
@@ -271,25 +227,17 @@ export default class Renderer {
         // Fill style of colliders
         const fillStyle = 'rgba(200, 50, 129, 0.6)';
 
-        // Calculate scaling
-        const scaledPosition = this.scalingManager.virtualToScreen(gameObject.position);
-        const scaledCameraOffset = this.scalingManager.virtualToScreen(this.camera.getPositionOffsetForRenderer(gameObject));
-        const resultingPosition = scaledPosition.subtract(scaledCameraOffset);
-
         // In case game object collider is a rect collider
         if (gameObject.collider instanceof RectCollider) {
-            // Calculate scaled size
-            const scaledSize = this.scalingManager.boxSizeVirtualToScreen(gameObject.collider.size);
-
-            // Draw in context with scaling applied
+            // Draw in context
             this.context.save();
             this.context.beginPath();
             this.context.fillStyle = fillStyle;
             this.context.fillRect(
-                resultingPosition.x - scaledSize.x / 2,
-                resultingPosition.y - scaledSize.y / 2,
-                scaledSize.x,
-                scaledSize.y
+                gameObject.position.x - gameObject.collider.size.x / 2 - this.camera.getPositionOffsetForRenderer(gameObject).x,
+                gameObject.position.y - gameObject.collider.size.y / 2 - this.camera.getPositionOffsetForRenderer(gameObject).y,
+                gameObject.collider.size.x,
+                gameObject.collider.size.y
             );
             this.context.stroke();
             this.context.restore();
@@ -298,16 +246,13 @@ export default class Renderer {
 
         // In case game object collider is a circle collider
         if (gameObject.collider instanceof CircleCollider) {
-            // Calculate scaled size
-            const scaledRadius = this.scalingManager.circleRadiusVirtualToScreen(gameObject.collider.radius);
-
-            // Draw in context with scaling applied
+            // Draw in context
             this.context.save();
             this.context.beginPath();
             this.context.arc(
-                resultingPosition.x,
-                resultingPosition.y,
-                scaledRadius,
+                gameObject.position.x - this.camera.getPositionOffsetForRenderer(gameObject).x,
+                gameObject.position.y - this.camera.getPositionOffsetForRenderer(gameObject).y,
+                gameObject.collider.radius,
                 0,
                 2 * Math.PI,
                 false
@@ -327,8 +272,8 @@ export default class Renderer {
     private renderFps(): void {
         // Draw in context
         this.context.save();
-        this.context.fillStyle = 'rgba(0, 255, 0, 1)';
-        this.context.font = '15px Nova Mono';
+        this.context.fillStyle = 'rgba(19, 196, 196, 1)';
+        this.context.font = '18px Nova Mono';
         this.context.fillText(`FPS: ${this.previousFps}`, 10, 20);
         this.context.restore();
 

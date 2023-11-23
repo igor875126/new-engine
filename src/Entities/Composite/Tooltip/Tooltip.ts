@@ -1,8 +1,8 @@
 import Vector2 from "../../../Engine/Utilities/Vector2";
 import TooltipBackground from "./TooltipBackground";
 import EmptyObject from "../../Primitives/EmptyObject";
-import CircleCollider from "../../../Engine/Colliders/CircleCollider";
-import RectCollider from "../../../Engine/Colliders/RectCollider";
+import CircleCollider from "../../../Colliders/CircleCollider";
+import RectCollider from "../../../Colliders/RectCollider";
 import TooltipText from "./TooltipText";
 import Color from "../../../Engine/Utilities/Color";
 

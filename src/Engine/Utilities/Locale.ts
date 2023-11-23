@@ -1,3 +1,5 @@
+import Core from "../Core/Core";
+import IOC from "../Core/IOC";
 import ResourceLoader from "../Core/ResourceLoader";
 
 /**
@@ -13,9 +15,10 @@ export default class Locale {
     /**
      * Constructor
      */
-    constructor(resourceLoader: ResourceLoader, language: string) {
-        this.resourceLoader = resourceLoader;
-        this.setLanguage(language);
+    constructor() {
+        const core = IOC.makeSingleton('Core') as Core;
+        this.resourceLoader = core.resourceLoader;
+        this.setLanguage(core.options.language);
     }
 
     /**

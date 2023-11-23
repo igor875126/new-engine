@@ -1,6 +1,6 @@
-import CircleCollider from "../../../Engine/Colliders/CircleCollider";
+import CircleCollider from "../../../Colliders/CircleCollider";
 import Color from "../../../Engine/Utilities/Color";
-import RectCollider from "../../../Engine/Colliders/RectCollider";
+import RectCollider from "../../../Colliders/RectCollider";
 import Vector2 from "../../../Engine/Utilities/Vector2";
 import TextObject from "../../Primitives/TextObject";
 

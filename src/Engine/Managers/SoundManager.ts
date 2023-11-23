@@ -1,3 +1,5 @@
+import Core from "../Core/Core";
+import IOC from "../Core/IOC";
 import ResourceLoader from "../Core/ResourceLoader";
 
 export default class SoundManager {
@@ -9,9 +11,10 @@ export default class SoundManager {
     /**
      * Constructor
      */
-    constructor(resourceLoader: ResourceLoader, audioContext: AudioContext) {
-        this.resourceLoader = resourceLoader;
-        this.audioContext = audioContext;
+    constructor() {
+        const core = IOC.makeSingleton('Core') as Core;
+        this.resourceLoader = core.resourceLoader;
+        this.audioContext = core.audioContext;
     }
 
     /**

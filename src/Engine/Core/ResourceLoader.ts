@@ -3,6 +3,8 @@ import FontType from "../../Types/FontType";
 import ImageType from "../../Types/ImageType";
 import LocaleType from "../../Types/LocaleType";
 import SoundType from "../../Types/SoundType";
+import Core from "./Core";
+import IOC from "./IOC";
 import Preloader from "./Preloader";
 
 /**
@@ -25,8 +27,8 @@ export default class ResourceLoader {
     /**
      * Constructor
      */
-    constructor(audioContext: AudioContext) {
-        this.audioContext = audioContext;
+    constructor() {
+        this.audioContext = (IOC.makeSingleton('Core') as Core).audioContext;
     }
 
     /**

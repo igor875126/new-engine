@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Canvas Game</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f0f0;
+        }
+
+        canvas {
+            background-color: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            transform-origin: 0 0;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="gameCanvas" width="500" height="500"></canvas>
+
+    <script>
+        const baseResolution = { width: 500, height: 200 };
+        let canvas = document.getElementById('gameCanvas');
+        canvas.width = baseResolution.width;
+        canvas.height = baseResolution.height;
+        let ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            let windowRatio = window.innerWidth / window.innerHeight;
+            let baseRatio = baseResolution.width / baseResolution.height;
+            let scale;
+
+            if (windowRatio < baseRatio) {
+                // Letterboxing
+                scale = window.innerWidth / baseResolution.width;
+            } else {
+                // Pillarboxing
+                scale = window.innerHeight / baseResolution.height;
+            }
+
+            canvas.style.transform = `scale(${scale}) translate(-50%, -50%)`;
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Пример рисования
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'red';
+            ctx.fillRect(50, 50, 25, 25); // Пример квадрата
+        }
+
+        draw();
+
+        // Функция для расчёта масштабированных координат мыши
+        function getMousePosition(event) {
+            let rect = canvas.getBoundingClientRect();
+            let scaleX = canvas.width / rect.width;    // отношение масштаба между реальными и стилевыми размерами
+            let scaleY = canvas.height / rect.height;
+
+            return {
+                x: (event.clientX - rect.left) * scaleX,
+                y: (event.clientY - rect.top) * scaleY
+            };
+        }
+
+        // Обработчик события mousemove
+        canvas.addEventListener('mousemove', function (event) {
+            let mousePos = getMousePosition(event);
+            console.log('Масштабированные координаты мыши: x=' + mousePos.x + ', y=' + mousePos.y);
+
+            // ... вы можете добавить здесь дополнительный код для взаимодействия с координатами мыши ...
+        });
+    </script>
+</body>
+
+</html>

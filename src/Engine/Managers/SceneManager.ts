@@ -1,6 +1,8 @@
 import GameObjectsManager from "./GameObjectsManager";
 import ResourceLoader from "../Core/ResourceLoader";
 import Scene from "../Utilities/Scene";
+import IOC from "../Core/IOC";
+import Core from "../Core/Core";
 
 /*
 Attention important notice for iOS:
@@ -21,9 +23,10 @@ export default class SceneManager {
     /**
      * Constructor
      */
-    constructor(resourceLoader: ResourceLoader, gameObjectsManager: GameObjectsManager) {
-        this.resourceLoader = resourceLoader;
-        this.gameObjectsManager = gameObjectsManager;
+    constructor() {
+        const core = IOC.makeSingleton('Core') as Core;
+        this.resourceLoader = core.resourceLoader;
+        this.gameObjectsManager = core.gameObjectsManager;
     }
 
     /**

@@ -1,4 +1,6 @@
 import GameObject from "../../Entities/Primitives/GameObject";
+import Core from "../Core/Core";
+import IOC from "../Core/IOC";
 import EventManager from "./EventManager";
 
 /**
@@ -15,8 +17,8 @@ export default class GameObjectsManager {
     /**
      * Constructor
      */
-    constructor(eventManager: EventManager) {
-        this.eventManager = eventManager;
+    constructor() {
+        this.eventManager = (IOC.makeSingleton('Core') as Core).eventManager;
     }
 
     /**
