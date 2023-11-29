@@ -150,7 +150,10 @@ export default class ResourceLoader {
      */
     public async loadAllResources(): Promise<void> {
         // Show preloader
-        Preloader.showPreloader();
+        // TODO Preloader is working, but I've commented it out, because it showed up on Splash screens, etc...
+        // TODO This does not look nice, have to fix this somehow. Maybe make it configurable on which scene to show up
+        // TODO And on which scene do not?
+        // Preloader.showPreloader();
 
         // Calculate total resources to load
         this.totalResourcesToLoad = this.images.length + this.fonts.length + this.sounds.length + this.locales.length;
